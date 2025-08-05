@@ -2,7 +2,7 @@
 
 # Run these after creating the repository on GitHub:
 
-cd ~/Projects/Shopify-Theme-Optimizer
+cd ~/Desktop/Shopify-Theme-Optimizer
 git remote add origin https://github.com/Curetshop/shopify-theme-optimizer.git
 git branch -M main  
 git push -u origin main

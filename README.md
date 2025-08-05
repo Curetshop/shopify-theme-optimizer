@@ -41,7 +41,7 @@ Shopify-Theme-Optimizer/
 
 ### **🚀 ACTIVATION:**
 ```bash
-cd ~/Projects/Shopify-Theme-Optimizer/
+cd ~/Desktop/Shopify-Theme-Optimizer/
 # Say: "pitagora start" to any AI agent
 ```
 

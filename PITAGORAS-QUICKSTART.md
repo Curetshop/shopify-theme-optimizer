@@ -13,7 +13,7 @@
 
 ### 🚀 COMANDO INMEDIATO:
 ```bash
-cd ~/Projects/Shopify-Theme-Optimizer/source/
+cd ~/Desktop/Shopify-Theme-Optimizer/source/
 shopify theme dev --store [your-store]
 ```
 
