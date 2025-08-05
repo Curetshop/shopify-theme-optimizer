@@ -1,0 +1,1000 @@
+{%- assign color_label_list = 'general.label.color' | t | replace: ', ', ',' | downcase | split: ',' -%}
+{%- assign color_white_label = 'general.label.white' | t | downcase -%}
+{%- assign size_label_list = 'general.label.size' | t | replace: ', ', ',' | downcase | split: ',' -%}
+{%- assign product_form_id = 'product-form-' | append: section.id | append: '-' | append: product.id -%}
+
+<div class="product-form">
+  {%- for block in section.blocks -%}
+    {%- case block.type -%}
+      {%- comment -%}
+      ----------------------------------------------------------------------------------------------------------------
+      APP BLOCK TYPE
+      ----------------------------------------------------------------------------------------------------------------
+      {%- endcomment -%}
+      {%- when '@app' -%}
+        {%- render block -%}
+
+      {%- comment -%}
+      ----------------------------------------------------------------------------------------------------------------
+      VARIANT PICKER BLOCK TYPE
+      ----------------------------------------------------------------------------------------------------------------
+      {%- endcomment -%}
+       {%- when 'custom_variant_picker' -%}
+    {%- unless product.has_only_default_variant -%}
+      {%- for option in product.options_with_values -%}
+        {% if option.name == 'Color' or option.name == 'color' %}
+          {% assign custom_product_color = option.selected_value %}
+          {% endif %}
+        {% endfor %}
+      {% endunless %}
+    {% if product.metafields.custom.variant_products %}
+      {% assign relatedProducts = product.metafields.custom.variant_products.value %}
+      <!-- check at least one recommended product is available -->
+      {%- liquid
+        assign has1product = false
+        for prod in relatedProducts
+          if prod.available == true
+            assign has1product = true
+          endif
+        endfor
+      -%}
+      {% if has1product %}
+        <p
+          class="related-products-heading"
+          style="font-size: {{block.settings.heading_font_size}}px; color: {{block.settings.heading_color}};"
+        >
+         <span class = 'heading heading--small 'style = 'display:inline'> {{ block.settings.heading }}</span>{{custom_product_color}}
+        </p>
+        <div class="related-products" id="related-products-{{ block.id }}">
+          {% for prod in relatedProducts %}
+            {% assign prodtags = prod.tags | split:"," %}
+             {% unless prodtags contains "draft" %}
+                <a href="{{ prod.url }}" class="related-product" aria-label="{{prod.title}}" title="{{ prod.title }}">
+                    <img loading="lazy" class="related-product__image" src="{{ prod.images[0] | img_url: '500x' }}" alt="{{ prod.title }}">
+                  </a>
+      {% endunless %}
+          {% endfor %}
+        </div>
+        <style>
+          /* Variables CSS para consistencia */
+          :root {
+            --color-primary: {{ block.settings.heading_color }};
+            --color-hover: {{ block.settings.hover_border_color }};
+            --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.12);
+            --shadow-heavy: 0 8px 32px rgba(0, 0, 0, 0.16);
+            --border-radius: 12px;
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+          }
+
+          /* Estilos mejorados para outline */
+          .outline { 
+            display: inline-flex;
+            border-radius: 50%;
+            outline: 2px solid rgba(0, 0, 0, 0.1);
+            justify-content: center;
+            align-items: center;
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-light);
+          }
+          
+          .outline::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.3));
+            border-radius: 50%;
+            opacity: 0;
+            transition: var(--transition-smooth);
+          }
+          
+          .outline:hover { 
+            border: 3px solid rgba(0, 0, 0, 0.8);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: var(--shadow-medium);
+          }
+          
+          .outline:hover::before {
+            opacity: 1;
+          }
+          
+          .outline:active {
+            transform: translateY(0) scale(0.98);
+            box-shadow: var(--shadow-light);
+          }
+          
+          /* Estilos mejorados para swatch */
+          .swatch {
+            height: 100%;
+            border-radius: var(--border-radius);
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+          }
+          
+          .swatch::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.1));
+            border-radius: var(--border-radius);
+            opacity: 0;
+            transition: var(--transition-smooth);
+          }
+          
+          .swatch:hover::after {
+            opacity: 1;
+          }
+
+          /* Estilos mejorados para el heading */
+          .related-products-heading {
+            margin: 16px 0 12px 0;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            position: relative;
+            padding: 8px 0;
+          }
+          
+          .related-products-heading::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 40px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--color-primary), transparent);
+            border-radius: 1px;
+          }
+
+          /* Contenedor principal mejorado */
+          #related-products-{{ block.id }} {
+            text-align: left;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 8px 0;
+            position: relative;
+          }
+          
+          /* Estilos mejorados para productos relacionados */
+          #related-products-{{ block.id }} .related-product {
+            display: inline-block;
+            width: calc(15% - 8px);
+            margin: 0;
+            position: relative;
+            border: 3px solid transparent;
+            text-align: center;
+            border-radius: var(--border-radius);
+            transition: var(--transition-smooth);
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-light);
+            overflow: hidden;
+          }
+          
+          #related-products-{{ block.id }} .related-product::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.1));
+            border-radius: var(--border-radius);
+            opacity: 0;
+            transition: var(--transition-smooth);
+            z-index: 1;
+          }
+          
+          #related-products-{{ block.id }} .related-product:last-child {
+            margin-right: 0;
+          }
+          
+          /* Imagen del producto relacionado mejorada */
+          #related-products-{{ block.id }} .related-product__image {
+            width: 100%;
+            max-width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: calc(var(--border-radius) - 2px);
+            transition: var(--transition-smooth);
+            position: relative;
+            z-index: 0;
+          }
+          
+          /* Efectos hover mejorados */
+          #related-products-{{ block.id }} .related-product:hover {
+            border-color: var(--color-hover);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: var(--shadow-heavy);
+          }
+          
+          #related-products-{{ block.id }} .related-product:hover::before {
+            opacity: 1;
+          }
+          
+          #related-products-{{ block.id }} .related-product:hover .related-product__image {
+            transform: scale(1.05);
+          }
+          
+          /* Efectos focus para accesibilidad */
+          #related-products-{{ block.id }} .related-product:focus {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+            border-color: var(--color-primary);
+          }
+          
+          #related-products-{{ block.id }} .related-product:focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+          }
+          
+          /* Efectos active para feedback táctil */
+          #related-products-{{ block.id }} .related-product:active {
+            transform: translateY(-2px) scale(0.98);
+            box-shadow: var(--shadow-medium);
+          }
+          
+          /* Responsive design mejorado */
+          @media (max-width: 768px) {
+            #related-products-{{ block.id }} .related-product {
+              width: calc(20% - 8px);
+            }
+          }
+          
+          @media (max-width: 480px) {
+            #related-products-{{ block.id }} .related-product {
+              width: calc(25% - 6px);
+              margin-bottom: 8px;
+            }
+            
+            #related-products-{{ block.id }} {
+              gap: 8px;
+              padding: 4px 0;
+            }
+          }
+          
+          /* Animación de entrada */
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          
+          #related-products-{{ block.id }} .related-product {
+            animation: fadeInUp 0.6s ease-out forwards;
+          }
+          
+          #related-products-{{ block.id }} .related-product:nth-child(1) { animation-delay: 0.1s; }
+          #related-products-{{ block.id }} .related-product:nth-child(2) { animation-delay: 0.2s; }
+          #related-products-{{ block.id }} .related-product:nth-child(3) { animation-delay: 0.3s; }
+          #related-products-{{ block.id }} .related-product:nth-child(4) { animation-delay: 0.4s; }
+          #related-products-{{ block.id }} .related-product:nth-child(5) { animation-delay: 0.5s; }
+          #related-products-{{ block.id }} .related-product:nth-child(6) { animation-delay: 0.6s; }
+          
+          /* ===== ESTILOS MODERNOS PARA SELECTOR DE TALLAS ===== */
+          
+          /* Contenedor de tallas mejorado */
+          .block-swatch-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin: 12px 0;
+            position: relative;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: var(--border-radius);
+            padding: 6px;
+            backdrop-filter: blur(8px);
+            box-shadow: var(--shadow-light);
+            border: 1px solid rgba(var(--border-color), 0.1);
+          }
+          
+          /* Estilos base para cada talla */
+          .block-swatch {
+            position: relative;
+            transition: var(--transition-smooth);
+          }
+          
+          /* Item de talla con efectos modernos */
+          .block-swatch__item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 42px;
+            min-height: 42px;
+            padding: 8px 12px;
+            border: 1px solid rgba(var(--border-color), 0.15);
+            border-radius: calc(var(--border-radius) - 2px);
+            background: rgba(255, 255, 255, 0.95);
+            color: rgb(var(--text-color));
+            font-weight: 500;
+            font-size: 13px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            user-select: none;
+          }
+          
+          /* Efecto de brillo en hover */
+          .block-swatch__item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.3));
+            border-radius: var(--border-radius);
+            opacity: 0;
+            transition: var(--transition-smooth);
+            z-index: 1;
+          }
+          
+          /* Efecto de borde interno para seleccionado */
+          .block-swatch__item::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            border: 2px solid transparent;
+            border-radius: calc(var(--border-radius) - 2px);
+            opacity: 0;
+            transition: var(--transition-smooth);
+            z-index: 2;
+          }
+          
+          /* Estados hover para tallas disponibles */
+          .block-swatch__item:hover {
+            border-color: rgba(var(--text-color), 0.3);
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+          }
+          
+          .block-swatch__item:hover::before {
+            opacity: 1;
+          }
+          
+          /* Estado seleccionado */
+          .block-swatch__radio:checked + .block-swatch__item {
+            border-color: transparent;
+            background: var(--color-primary);
+            color: white;
+            font-weight: 600;
+            transform: translateY(-1px);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.25);
+          }
+          
+          .block-swatch__radio:checked + .block-swatch__item::after {
+            opacity: 0;
+          }
+          
+          /* Asegurar que el texto "Agotado" no aparezca en elementos seleccionados */
+          .block-swatch__radio:checked + .block-swatch__item::after {
+            content: none;
+          }
+          
+          /* Estado disabled para tallas agotadas */
+          .block-swatch.is-disabled .block-swatch__item {
+            background: rgba(var(--border-color), 0.08);
+            border-color: rgba(var(--border-color), 0.15);
+            color: rgba(var(--text-color), 0.4);
+            cursor: not-allowed;
+            position: relative;
+            overflow: hidden;
+          }
+          
+          /* Línea diagonal para tallas agotadas */
+          .block-swatch.is-disabled .block-swatch__item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, 
+              transparent calc(50% - 1px), 
+              rgba(var(--text-color), 0.3) 50%, 
+              transparent calc(50% + 1px)
+            );
+            opacity: 1;
+            z-index: 1;
+          }
+          
+          /* Texto "Agotado" para tallas no disponibles */
+          .block-swatch.is-disabled .block-swatch__item::after {
+            content: 'Agotado';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 8px;
+            font-weight: 400;
+            color: rgba(var(--text-color), 0.5);
+            white-space: nowrap;
+            z-index: 2;
+          }
+          
+          /* Efectos focus para accesibilidad */
+          .block-swatch__radio:focus-visible + .block-swatch__item {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+            border-color: var(--color-primary);
+          }
+          
+          /* Efectos active para feedback táctil */
+          .block-swatch__item:active:not(.is-disabled) {
+            transform: translateY(0) scale(0.98);
+            box-shadow: var(--shadow-light);
+          }
+          
+          /* Animación de entrada para tallas */
+          @keyframes slideInUp {
+            from {
+              opacity: 0;
+              transform: translateY(15px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          
+          .block-swatch {
+            animation: slideInUp 0.4s ease-out forwards;
+          }
+          
+          .block-swatch:nth-child(1) { animation-delay: 0.1s; }
+          .block-swatch:nth-child(2) { animation-delay: 0.15s; }
+          .block-swatch:nth-child(3) { animation-delay: 0.2s; }
+          .block-swatch:nth-child(4) { animation-delay: 0.25s; }
+          .block-swatch:nth-child(5) { animation-delay: 0.3s; }
+          .block-swatch:nth-child(6) { animation-delay: 0.35s; }
+          .block-swatch:nth-child(7) { animation-delay: 0.4s; }
+          .block-swatch:nth-child(8) { animation-delay: 0.45s; }
+          
+          /* Responsive para tallas */
+          @media (max-width: 768px) {
+            .block-swatch-list {
+              gap: 3px;
+              padding: 5px;
+            }
+            
+            .block-swatch__item {
+              min-width: 38px;
+              min-height: 38px;
+              padding: 6px 10px;
+              font-size: 12px;
+            }
+          }
+          
+          @media (max-width: 480px) {
+            .block-swatch-list {
+              gap: 2px;
+              padding: 4px;
+            }
+            
+            .block-swatch__item {
+              min-width: 36px;
+              min-height: 36px;
+              padding: 5px 8px;
+              font-size: 11px;
+            }
+          }
+        </style>
+      {% endif %}
+    {% endif %}
+      {%- when 'variant_picker' -%}
+        {%- unless product.has_only_default_variant or block.settings.hide_sold_out_variants and product.available == false -%}
+          {%- assign size_chart_page = block.settings.size_chart_page -%}
+          {%- assign found_size_option = false -%}
+
+          <product-variants handle="{{ product.handle }}" form-id="{{ product_form_id }}" {% if update_url %}update-url{% endif %} {% if block.settings.hide_sold_out_variants %}hide-sold-out-variants{% endif %} class="product-form__variants" {{ block.shopify_attributes }}>
+            {%- for option in product.options_with_values -%}
+              {%- assign option_downcase = option.name | downcase -%}
+              {%- capture option_id -%}option-{{ section.id }}-{{ template.suffix }}-{{ product.id }}-{{ forloop.index }}{%- endcapture -%}
+
+              {%- assign selector_type = block.settings.selector_mode -%}
+              {%- assign variant_image_options = block.settings.variant_image_options | replace: ', ', ',' | downcase | split: ',' -%}
+
+              {%- assign swatch_count = option.values | map: 'swatch' | compact | size -%}
+
+              {%- if swatch_count > 0 and block.settings.color_mode == 'swatch' %}
+                {%- assign selector_type = 'swatch' -%}
+              {%- endif -%}
+
+              {% if swatch_count == 0 and color_label_list contains option_downcase and block.settings.color_mode != 'none' %}
+                {%- assign selector_type = 'swatch' -%}
+              {%- endif -%}
+
+              {%- if variant_image_options contains option_downcase -%}
+                {%- assign selector_type = 'variant_image' -%}
+              {%- endif -%}
+
+              <div class="product-form__option-selector" data-selector-type="{{ selector_type | replace: '_', '-' | escape }}">
+                <div class="product-form__option-info">
+                  <span class="product-form__option-name">{{ option.name }}:</span>
+
+                  {%- if selector_type != 'dropdown' -%}
+                    <span id="{{ option_id }}-value" class="product-form__option-value">{{ option.selected_value }}</span>
+                  {%- endif -%}
+
+                  {%- if size_chart_page != blank and size_label_list contains option_downcase -%}
+                    {%- assign found_size_option = true -%}
+                    <button type="button" is="toggle-button" class="product-form__option-link link text--subdued hidden-phone" aria-controls="product-{{ section.id }}-{{ product.id }}-size-chart-drawer" aria-expanded="false">{{ 'product.general.size_chart' | t }}</button>
+                    <button type="button" is="toggle-button" class="product-form__option-link link text--subdued hidden-tablet-and-up" aria-controls="product-{{ section.id }}-{{ product.id }}-size-chart-popover" aria-expanded="false">{{ 'product.general.size_chart' | t }}</button>
+                  {%- endif -%}
+                </div>
+
+                {%- case selector_type -%}
+                  {%- when 'variant_image' -%}
+                    <div class="variant-swatch-list">
+                      {%- for value in option.values -%}
+                        {%- assign image = value.variant.featured_media | default: value.variant.product.featured_media -%}
+
+                        <div class="variant-swatch">
+                          <input class="variant-swatch__radio visually-hidden" type="radio" name="option{{ option.position }}" form="{{ product_form_id }}" id="{{ option_id }}-{{ forloop.index }}" value="{{ value | escape }}" data-bind-value="{{ option_id }}-value" {% if value == option.selected_value %}checked="checked"{% endif %} aria-label="{{ value | escape }}">
+                          <label class="variant-swatch__item" for="{{ option_id }}-{{ forloop.index }}">
+                            <span class="visually-hidden">{{ value }}</span>
+
+                            {{- image | image_url: width: image.width | image_tag: loading: 'lazy', sizes: '(max-width: 740px) 64px, 72px', sizes: '64,72,128,144,192,216', class: 'variant-swatch__image' -}}
+                          </label>
+                        </div>
+                      {%- endfor -%}
+                    </div>
+
+                  {%- when 'swatch' -%}
+                    <div class="color-swatch-list">
+                      {%- assign color_swatch_config = settings.color_swatch_config | newline_to_br | split: '<br />' -%}
+
+                      {%- for value in option.values -%}
+                        {%- assign color_value_downcase = value | downcase -%}
+
+                        <div class="color-swatch {% if color_white_label == color_value_downcase %}color-swatch--white{% endif %}">
+                          <input class="color-swatch__radio visually-hidden" type="radio" name="option{{ option.position }}" form="{{ product_form_id }}" id="{{ option_id }}-{{ forloop.index }}" value="{{ value | escape }}" {% if value == option.selected_value %}checked="checked"{% endif %} data-bind-value="{{ option_id }}-value">
+                          <label class="color-swatch__item" for="{{ option_id }}-{{ forloop.index }}" style="{% render 'color-swatch-style', swatch: value.swatch, color_swatch_config: color_swatch_config, value: value %}">
+                            <span class="visually-hidden">{{ value }}</span>
+                          </label>
+                        </div>
+                      {%- endfor -%}
+                    </div>
+
+                  {%- when 'block' -%}
+                    <div class="block-swatch-list">
+                      {%- for value in option.values -%}
+                        <div class="block-swatch">
+                          <input class="block-swatch__radio visually-hidden" type="radio" name="option{{ option.position }}" form="{{ product_form_id }}" id="{{ option_id }}-{{ forloop.index }}" value="{{ value | escape }}" {% if value == option.selected_value %}checked="checked"{% endif %} data-bind-value="{{ option_id }}-value">
+                          <label class="block-swatch__item" for="{{ option_id }}-{{ forloop.index }}">{{ value }}</label>
+                        </div>
+                      {%- endfor -%}
+                    </div>
+
+                  {%- when 'dropdown' -%}
+                    <div class="select-wrapper">
+                      <combo-box initial-focus-selector="[aria-selected='true']" id="{{ option_id }}-combo-box" class="combo-box">
+                        <span class="combo-box__overlay"></span>
+
+                        <header class="combo-box__header">
+                          <p class="combo-box__title heading h6">{{ option.name }}</p>
+
+                          <button type="button" class="combo-box__close-button tap-area" data-action="close" title="{{ 'general.accessibility.close' | t | escape }}">
+                            {%- render 'icon' with 'close' -%}
+                          </button>
+                        </header>
+
+                        <div class="combo-box__option-list" role="listbox">
+                          {%- for value in option.values -%}
+                            <button type="button" role="option" class="combo-box__option-item" value="{{ value | escape }}" aria-selected="{% if value == option.selected_value %}true{% else %}false{% endif %}">{{ value }}</button>
+                          {%- endfor -%}
+                        </div>
+
+                        <select class="visually-hidden" name="option{{ option.position }}" form="{{ product_form_id }}" data-bind-value="{{ option_id }}-value" aria-label="{{ option.name | escape }}">
+                          {%- for value in option.values -%}
+                            <option value="{{ value | escape }}" {% if value == option.selected_value %}selected{% endif %}>{{ value }}</option>
+                          {%- endfor -%}
+                        </select>
+                      </combo-box>
+
+                      <button type="button" is="toggle-button" class="select" aria-expanded="false" aria-haspopup="listbox" aria-controls="{{ option_id }}-combo-box">
+                        <span id="{{ option_id }}-value" class="select__selected-value">{{ option.selected_value }}</span>
+                        {%- render 'icon' with 'chevron' -%}
+                      </button>
+                    </div>
+                {%- endcase -%}
+              </div>
+            {%- endfor -%}
+
+            <noscript>
+              <label class="input__block-label" for="product-select-{{ section.id }}-{{ product.id }}">{{ 'product.form.variant' | t }}</label>
+
+              <div class="select-wrapper">
+                <select class="select" autocomplete="off" id="product-select-{{ section.id }}-{{ product.id }}" name="id" form="{{ product_form_id }}">
+                  {%- for variant in product.variants -%}
+                    <option {% if variant == product.selected_or_first_available_variant %}selected="selected"{% endif %} {% unless variant.available %}disabled="disabled"{% endunless %} value="{{ variant.id }}" data-sku="{{ variant.sku }}">{{ variant.title }} - {{ variant.price | money }}</option>
+                  {%- endfor -%}
+                </select>
+
+                {%- render 'icon' with 'chevron' -%}
+              </div>
+            </noscript>
+          </product-variants>
+        {%- endunless -%}
+
+      {%- comment -%}
+      ----------------------------------------------------------------------------------------------------------------
+      LINE ITEM PROPERTY
+      ----------------------------------------------------------------------------------------------------------------
+      {%- endcomment -%}
+      {%- when 'line_item_property' -%}
+        {%- if block.settings.label != blank -%}
+          {%- case block.settings.type -%}
+            {%- when 'text' -%}
+              {%- if block.settings.allow_long_text -%}
+                <div class="product-form__line-item-property" {{ block.shopify_attributes }}>
+                  <label class="input__block-label" for="line-item-{{ section.id }}-{{ block.id }}">{{ block.settings.label | escape }}:</label>
+                  <textarea {% if block.settings.required %}required{% endif %} id="line-item-{{ section.id }}-{{ block.id }}" form="{{ product_form_id }}" class="input__field input__field--textarea" name="properties[{{ block.settings.label | escape }}]"></textarea>
+                </div>
+              {% else %}
+                <div class="product-form__line-item-property" {{ block.shopify_attributes }}>
+                  <label class="input__block-label" for="line-item-{{ section.id }}-{{ block.id }}">{{ block.settings.label | escape }}:</label>
+                  <input {% if block.settings.required %}required{% endif %} id="line-item-{{ section.id }}-{{ block.id }}" form="{{ product_form_id }}" type="text" class="input__field" name="properties[{{ block.settings.label | escape }}]">
+                </div>
+              {%- endif -%}
+
+            {%- when 'checkbox' -%}
+              <div class="product-form__line-item-property" {{ block.shopify_attributes }}>
+                <div class="checkbox-container">
+                  <input type="hidden" form="{{ product_form_id }}" class="checkbox" name="properties[{{ block.settings.label | escape }}]" value="{{ block.settings.unchecked_value | escape }}">
+                  <input type="checkbox" form="{{ product_form_id }}" class="checkbox" name="properties[{{ block.settings.label | escape }}]" id="line-item-{{ section.id }}-{{ block.id }}" value="{{ block.settings.checked_value | escape }}">
+                  <label for="line-item-{{ section.id }}-{{ block.id }}">{{ block.settings.label | escape }}</label>
+                </div>
+              </div>
+          {%- endcase -%}
+        {%- endif -%}
+
+      {%- comment -%}
+      ----------------------------------------------------------------------------------------------------------------
+      TEXT
+      ----------------------------------------------------------------------------------------------------------------
+      {%- endcomment -%}
+      {%- when 'text' -%}
+        {% if block.settings.text != blank %}
+          <div class="product-form__text" {{ block.shopify_attributes }}>
+            {{- block.settings.text -}}
+          </div>
+        {%- endif -%}
+
+      {%- comment -%}
+      ----------------------------------------------------------------------------------------------------------------
+      IMAGE
+      ----------------------------------------------------------------------------------------------------------------
+      {%- endcomment -%}
+      {%- when 'image' -%}
+      {% if block.settings.image != blank %}
+        <div class="product-form__image product-form__image--{{ block.settings.image_alignment }}" {{ block.shopify_attributes }}>
+          {%- capture image_sizes -%}{{ block.settings.image_width }}, {{ block.settings.image_width | times: 2 }}, {{ block.settings.image_width | times: 3 }}{%- endcapture -%}
+          {%- capture sizes_attribute -%}{{ block.settings.image_width }}px{%- endcapture -%}
+          {%- capture style_attribute -%}max-width: {{ block.settings.image_width }}px{%- endcapture -%}
+          {{- block.settings.image | image_url: width: block.settings.image.width | image_tag: loading: 'lazy', sizes: sizes_attribute, widths: image_sizes, style: style_attribute -}}
+        </div>
+      {%- endif -%}
+
+      {%- comment -%}
+      ----------------------------------------------------------------------------------------------------------------
+      BUTTON
+      ----------------------------------------------------------------------------------------------------------------
+      {%- endcomment -%}
+      {%- when 'button' -%}
+        {% if block.settings.link != blank and block.settings.text != blank %}
+          <div class="product-form__button" {{ block.shopify_attributes }}>
+            {%- if block.settings.background == 'rgba(0,0,0,0)' -%}
+              {%- assign button_background = settings.primary_button_background -%}
+            {%- else -%}
+              {%- assign button_background = block.settings.background -%}
+            {%- endif -%}
+
+            {%- if block.settings.text_color == 'rgba(0,0,0,0)' -%}
+              {%- assign button_text_color = settings.primary_button_text_color -%}
+            {%- else -%}
+              {%- assign button_text_color = block.settings.text_color -%}
+            {%- endif -%}
+
+            {%- capture button_background_rgb -%}{{ button_background.red }}, {{ button_background.green }}, {{ button_background.blue }}{%- endcapture -%}
+            {%- capture button_text_color_rgb -%}{{ button_text_color.red }}, {{ button_text_color.green }}, {{ button_text_color.blue }}{%- endcapture -%}
+
+            <a href="{{ block.settings.link }}" class="button button--primary {% if block.settings.stretch %}button--full{% endif %}" style="--primary-button-background: {{ button_background_rgb }}; --primary-button-text-color: {{ button_text_color_rgb }}">{{ block.settings.text | escape }}</a>
+          </div>
+        {%- endif -%}
+
+      {%- comment -%}
+      ----------------------------------------------------------------------------------------------------------------
+      CUSTOM LIQUID
+      ----------------------------------------------------------------------------------------------------------------
+      {%- endcomment -%}
+      {%- when 'liquid' -%}
+        {% if block.settings.liquid != blank %}
+          <div class="product-form__custom-liquid" {{ block.shopify_attributes }}>
+            {{- block.settings.liquid -}}
+          </div>
+        {%- endif -%}
+
+      {%- comment -%}
+      ----------------------------------------------------------------------------------------------------------------
+      QUANTITY SELECTOR
+      ----------------------------------------------------------------------------------------------------------------
+      {%- endcomment -%}
+      {%- when 'quantity_selector' -%}
+        {%- if request.page_type != 'password' and product.available -%}
+          <div class="product-form__quantity" {{ block.shopify_attributes }}>
+            <span class="product-form__quantity-label">{{ 'product.form.quantity' | t }}:</span>
+
+            <quantity-selector class="quantity-selector">
+              <button type="button" class="quantity-selector__button">
+                <span class="visually-hidden">{{ 'cart.general.decrease_quantity' | t }}</span>
+                {%- render 'icon' with 'minus-big' -%}
+              </button>
+
+              <input type="text" form="{{ product_form_id }}" is="input-number" class="quantity-selector__input" inputmode="numeric" name="quantity" autocomplete="off" min="1" value="1" size="2" aria-label="{{ 'product.form.quantity' | t | escape }}">
+
+              <button type="button" class="quantity-selector__button">
+                <span class="visually-hidden">{{ 'cart.general.increase_quantity' | t }}</span>
+                {%- render 'icon' with 'plus-big' -%}
+              </button>
+            </quantity-selector>
+          </div>
+        {%- endif -%}
+
+      {%- comment -%}
+      ----------------------------------------------------------------------------------------------------------------
+      PRODUCT DESCRIPTION
+      ----------------------------------------------------------------------------------------------------------------
+      {%- endcomment -%}
+      {%- when 'description' -%}
+        {%- if product.description != blank -%}
+          <div class="product-form__description rte" {{ block.shopify_attributes }}>
+            {{- product.description -}}
+          </div>
+        {%- endif -%}
+
+      {%- comment -%}
+      ----------------------------------------------------------------------------------------------------------------
+      INVENTORY
+      ----------------------------------------------------------------------------------------------------------------
+      {%- endcomment -%}
+      {%- when 'inventory' -%}
+        {%- if product.template_suffix != 'pre-order' and product.available or product.selected_or_first_available_variant.incoming -%}
+          <product-inventory form-id="{{ product_form_id }}" {% unless product.selected_or_first_available_variant.available or product.selected_or_first_available_variant.incoming %}hidden{% endunless %} class="product-form__inventory-wrapper" {{ block.shopify_attributes }}>
+            {%- if product.selected_or_first_available_variant.available -%}
+              {%- if product.selected_or_first_available_variant.inventory_management and product.selected_or_first_available_variant.inventory_policy == 'deny' and product.selected_or_first_available_variant.inventory_quantity <= block.settings.low_inventory_threshold and block.settings.low_inventory_threshold > 0 -%}
+                <span class="inventory inventory--low">{{ 'product.form.low_stock_with_quantity_count' | t: count: product.selected_or_first_available_variant.inventory_quantity }}</span>
+              {%- else -%}
+                {%- if product.selected_or_first_available_variant.inventory_policy == 'continue' and product.selected_or_first_available_variant.inventory_quantity <= 0 and product.selected_or_first_available_variant.requires_shipping -%}
+                  {%- if product.selected_or_first_available_variant.incoming and product.selected_or_first_available_variant.next_incoming_date -%}
+                    {%- capture next_incoming_date -%}{{ product.selected_or_first_available_variant.next_incoming_date | date: format: 'date' }}{%- endcapture -%}
+                    <span class="inventory inventory--low">{{ 'product.form.incoming_stock' | t: next_incoming_date: next_incoming_date }}</span>
+                  {%- else -%}
+                    <span class="inventory inventory--low">{{ 'product.form.oversell_stock' | t }}</span>
+                  {%- endif -%}
+                {%- else -%}
+                  <span class="inventory inventory--high">{{ 'product.form.in_stock' | t }}</span>
+                {%- endif -%}
+              {%- endif -%}
+            {%- elsif product.selected_or_first_available_variant.incoming -%}
+              {%- if product.selected_or_first_available_variant.next_incoming_date -%}
+                {%- capture next_incoming_date -%}{{ product.selected_or_first_available_variant.next_incoming_date | date: format: 'date' }}{%- endcapture -%}
+                <span class="inventory inventory--low">{{ 'product.form.incoming_stock' | t: next_incoming_date: next_incoming_date }}</span>
+              {%- else -%}
+                <span class="inventory inventory--low">{{ 'product.form.oversell_stock' | t }}</span>
+              {%- endif -%}
+            {%- endif -%}
+
+            <script type="application/json">
+              {
+                {%- for variant in product.variants -%}
+                  {%- capture inventory_message -%}
+                    {%- if variant.available -%}
+                      {%- if variant.inventory_management and variant.inventory_policy == 'deny' and variant.inventory_quantity <= block.settings.low_inventory_threshold and block.settings.low_inventory_threshold > 0 -%}
+                        <span class="inventory inventory--low">{{ 'product.form.low_stock_with_quantity_count' | t: count: variant.inventory_quantity }}</span>
+                      {%- else -%}
+                        {%- if variant.inventory_policy == 'continue' and variant.inventory_quantity <= 0 and variant.requires_shipping -%}
+                          {%- if variant.incoming and variant.next_incoming_date -%}
+                            {%- capture next_incoming_date -%}{{ variant.next_incoming_date | date: format: 'date' }}{%- endcapture -%}
+                            <span class="inventory inventory--low">{{ 'product.form.incoming_stock' | t: next_incoming_date: next_incoming_date }}</span>
+                          {%- else -%}
+                            <span class="inventory inventory--low">{{ 'product.form.oversell_stock' | t }}</span>
+                          {%- endif -%}
+                        {%- else -%}
+                          <span class="inventory inventory--high">{{ 'product.form.in_stock' | t }}</span>
+                        {%- endif -%}
+                      {%- endif -%}
+                    {%- elsif variant.incoming -%}
+                      {%- if variant.next_incoming_date -%}
+                        {%- capture next_incoming_date -%}{{ variant.next_incoming_date | date: format: 'date' }}{%- endcapture -%}
+                        <span class="inventory inventory--low">{{ 'product.form.incoming_stock' | t: next_incoming_date: next_incoming_date }}</span>
+                      {%- else -%}
+                        <span class="inventory inventory--low">{{ 'product.form.oversell_stock' | t }}</span>
+                      {%- endif -%}
+                    {%- endif -%}
+                  {%- endcapture -%}
+
+                  "{{ variant.id }}": {{ inventory_message | json }}{% unless forloop.last %},{% endunless %}
+                {%- endfor -%}
+              }
+            </script>
+          </product-inventory>
+        {%- endif -%}
+
+      {%- comment -%}
+      ----------------------------------------------------------------------------------------------------------------
+      BUY BUTTONS
+      ----------------------------------------------------------------------------------------------------------------
+      {%- endcomment -%}
+      {%- when 'buy_buttons' -%}
+        {%- if request.page_type != 'password' -%}
+          {%- assign recipient_feature_active = false -%}
+
+          {%- if product.gift_card? and block.settings.show_gift_card_recipient -%}
+            {%- assign recipient_feature_active = true -%}
+          {%- endif -%}
+
+          <div class="product-form__buy-buttons" {{ block.shopify_attributes }}>
+            {%- form 'product', product, is: 'product-form', id: product_form_id -%}
+              {%- if recipient_feature_active -%}
+                <gift-card-recipient class="gift-card-recipient">
+                  <div class="input input--checkbox">
+                    <div class="checkbox-container">
+                      <input type="checkbox" class="checkbox" name="properties[__shopify_send_gift_card_to_recipient]" id="product-{{ section.id }}-{{ product.id }}-send-gift-card-to-recipient">
+                      <label for="product-{{ section.id }}-{{ product.id }}-send-gift-card-to-recipient" class="text--subdued">{{ 'gift_card.recipient.checkbox' | t }}</label>
+                    </div>
+                  </div>
+
+                  <div class="gift-card-recipient__fields js:hidden">
+                    <div class="input">
+                      <input id="product-{{ section.id }}-{{ product.id }}-recipient-email" type="email" class="input__field input__field--text" name="properties[Recipient email]" required value="{{ form.email }}">
+                      <label for="product-{{ section.id }}-{{ product.id }}-recipient-email" class="input__label">{{ 'gift_card.recipient.email_label' | t }}</label>
+                    </div>
+
+                    <div class="input">
+                      <input id="product-{{ section.id }}-{{ product.id }}-recipient-name" type="text" class="input__field input__field--text" name="properties[Recipient name]" value="{{ form.name }}">
+                      <label for="product-{{ section.id }}-{{ product.id }}-recipient-name" class="input__label">{{ 'gift_card.recipient.name_label' | t }}</label>
+                    </div>
+
+                    <div class="input">
+                      <input type="hidden" name="properties[__shopify_offset]" value="" disabled>
+                      <input id="product-{{ section.id }}-{{ product.id }}-send-on" type="date" class="input__field input__field--text" pattern="\d{4}-\d{2}-\d{2}" name="properties[Send on]" value="{{ form.send_on }}">
+                      <label for="product-{{ section.id }}-{{ product.id }}-send-on" class="input__label">{{ 'gift_card.recipient.send_on_label' | t }}</label>
+                    </div>
+
+                    <div class="input">
+                      <textarea id="product-{{ section.id }}-{{ product.id }}-recipient-message" rows="4" class="input__field input__field--textarea" name="properties[Message]">{{ form.message }}</textarea>
+                      <label for="product-{{ section.id }}-{{ product.id }}-recipient-message" class="input__label">{{ 'gift_card.recipient.message_label' | t }}</label>
+                    </div>
+                  </div>
+                </gift-card-recipient>
+              {%- endif -%}
+
+              <input type="hidden" disabled name="id" value="{{ product.selected_or_first_available_variant.id }}">
+
+              <product-payment-container form-id="{{ product_form_id }}" {% if update_url %}id="MainPaymentContainer"{% endif %} class="product-form__payment-container" {{ block.shopify_attributes }}>
+                <button id="AddToCart" type="submit" is="loader-button" {% unless block.settings.show_payment_button and template.suffix != 'quick-buy-popover' %}data-use-primary{% endunless %} data-product-add-to-cart-button data-button-content="{% if product.template_suffix == 'pre-order' %}{{ 'product.form.pre_order' | t | escape }}{% else %}{{ 'product.form.add_to_cart' | t | escape }}{% endif %}" class="product-form__add-button button {% unless product.selected_or_first_available_variant.available %}button--ternary{% else %}{% if block.settings.show_payment_button and template.suffix != 'quick-buy-popover' %}button--secondary{% else %}button--primary{% endif %}{% endunless %} button--full" {% unless product.selected_or_first_available_variant.available %}disabled{% endunless %}>
+                  {%- if product.selected_or_first_available_variant.available -%}
+                    {%- if product.template_suffix == 'pre-order' -%}
+                      {{- 'product.form.pre_order' | t -}}
+                    {%- else -%}
+                      {{- 'product.form.add_to_cart' | t -}}
+                    {%- endif -%}
+                  {%- else -%}
+                    {{- 'product.form.sold_out' | t -}}
+                  {%- endif -%}
+                </button>
+
+                {%- if block.settings.show_payment_button and recipient_feature_active == false and template.suffix != 'quick-buy-popover' -%}
+                  {{ form | payment_button }}
+
+                  {%- unless product.selected_or_first_available_variant.available -%}
+                    <style>
+                      #shopify-section-{{ section.id }} .shopify-payment-button {
+                        display: none;
+                      }
+                    </style>
+                  {%- endunless -%}
+                {%- endif -%}
+              </product-payment-container>
+            {%- endform -%}
+          </div>
+        {%- endif -%}
+
+        {%- if template.suffix != 'quick-buy-popover' -%}
+          <store-pickup form-id="{{ product_form_id }}" class="product-form__store-availability-container">
+            {%- render 'store-availability', product_variant: product.selected_or_first_available_variant -%}
+          </store-pickup>
+        {%- endif -%}
+    {%- endcase -%}
+  {%- endfor -%}
+
+  {%- comment -%}
+  IMPLEMENTATION NOTE: under rare circumstances, merchant may want to show selectors but hide the add to cart button. This
+  is however problematic as elements changed based on this. So if we detect there is no buy buttons block, we add an empty one
+  {%- endcomment -%}
+
+  {%- assign buy_buttons_block = section.blocks | where: 'type', 'buy_buttons' | first -%}
+
+  {%- if buy_buttons_block == blank -%}
+    {%- form 'product', product, is: 'product-form', id: product_form_id -%}
+      <input type="hidden" disabled name="id" value="{{ product.selected_or_first_available_variant.id }}">
+    {%- endform -%}
+  {%- endif -%}
+</div>
+
+{%- if template.suffix == 'quick-buy-drawer' -%}
+  <div class="product-form__view-details">
+    <a href="{{ product.url }}" class="link text--subdued">{{ 'product.general.view_details' | t }}</a>
+  </div>
+{%- endif -%}
+
+{%- comment -%}
+IMPLEMENTATION NOTE: if during the iteration of the options we have found an option matching a size chart, we add it here
+{%- endcomment -%}
+
+{%- if found_size_option and size_chart_page != blank -%}
+  {%- comment -%}Drawer is for tablet and desktop{%- endcomment -%}
+  <drawer-content id="product-{{ section.id }}-{{ product.id }}-size-chart-drawer" class="drawer drawer--large hidden-phone">
+    <span class="drawer__overlay"></span>
+
+    <header class="drawer__header">
+      <p class="drawer__title heading h6">{{ size_chart_page.title }}</p>
+
+      <button type="button" class="drawer__close-button tap-area" data-action="close" title="{{ 'general.accessibility.close' | t | escape }}">
+        {%- render 'icon' with 'close' -%}
+      </button>
+    </header>
+
+    <div class="drawer__content drawer__content--padded-start">
+      <div class="rte">
+        {{- size_chart_page.content -}}
+      </div>
+    </div>
+  </drawer-content>
+
+  {%- comment -%}Popover is for mobile{%- endcomment -%}
+  <popover-content id="product-{{ section.id }}-{{ product.id }}-size-chart-popover" class="popover hidden-lap-and-up">
+    <span class="popover__overlay"></span>
+
+    <header class="popover__header">
+      <p class="popover__title heading h6">{{ size_chart_page.title }}</p>
+
+      <button type="button" class="popover__close-button tap-area tap-area--large" data-action="close" title="{{ 'general.accessibility.close' | t | escape }}">
+        {%- render 'icon' with 'close' -%}
+      </button>
+    </header>
+
+    <div class="popover__content">
+      <div class="rte">
+        {{- size_chart_page.content -}}
+      </div>
+    </div>
+  </popover-content>
+{%- endif -%}
+
