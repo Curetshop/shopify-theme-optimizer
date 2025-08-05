@@ -1,0 +1,27 @@
+# Shopify Theme - Optimized .gitignore
+
+# Development files
+.DS_Store
+.vscode/
+.idea/
+*.log
+*.tmp
+
+# Backup files  
+backup-duplicates/
+*.backup
+
+# Connection scripts (local only)
+connect-theme.sh
+
+# Shopify specific
+config/settings_data.json
+
+# Node modules (if using build tools)
+node_modules/
+package-lock.json
+
+# Environment files
+.env
+.env.local
+
