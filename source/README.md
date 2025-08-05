@@ -1,1 +1,0 @@
-Shopify Theme Source Directory
