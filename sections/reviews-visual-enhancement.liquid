@@ -1,95 +1,7 @@
 {%- if section.settings.enable_reviews_enhancement -%}
 
-<script>
-// Sistema dinámico para obtener datos reales de Revie y actualizar el header
-window.addEventListener('load', function() {
-  // Solo ejecutar si existe el contenedor de Revie
-  if (!document.getElementById('content-rl-w') && !document.querySelector('[data-starlist]') && !document.querySelector('.summary')) {
-    return; // Salir si no hay elementos de Revie
-  }
-  
-  setTimeout(function() {
-    
-    // Función para extraer datos dinámicos de Revie
-    var extractRevieData = function() {
-      var rating = null;
-      var reviewCount = null;
-      
-      // Intentar obtener datos del metafield del producto
-      {% if product.metafields.revie.reviewData %}
-      rating = {{ product.metafields.revie.reviewData.reviewAverageValue | json }};
-      reviewCount = {{ product.metafields.revie.reviewData.reviewCount | json }};
-      {% endif %}
-      
-      // Si no hay metafields, intentar extraer del DOM de Revie
-      if (!rating || !reviewCount) {
-        // Buscar en la caja de puntuación de Revie
-        var scoreBox = document.querySelector('.table-start');
-        if (scoreBox) {
-          var scoreText = scoreBox.textContent.trim();
-          rating = parseFloat(scoreText);
-        }
-        
-        // Buscar cantidad de opiniones
-        var opinionsText = document.querySelector('.opinions-text');
-        if (opinionsText) {
-          var countMatch = opinionsText.textContent.match(/(\d+)/);
-          if (countMatch) {
-            reviewCount = parseInt(countMatch[1]);
-          }
-        }
-      }
-      
-      return { rating: rating, reviewCount: reviewCount };
-    };
-    
-    // Función para actualizar título dinámico si está configurado
-    var updateDynamicTitle = function() {
-      {% if section.settings.enable_dynamic_title %}
-      var data = extractRevieData();
-      var titleElement = document.querySelector('.content-flex.content-between.summary h2');
-      
-      if (titleElement && data.rating && data.reviewCount) {
-        var dynamicTitle = '{{ section.settings.dynamic_title_template | default: "⭐ {rating} | {count} Opiniones Verificadas" }}';
-        dynamicTitle = dynamicTitle.replace('{rating}', data.rating.toFixed(1));
-        dynamicTitle = dynamicTitle.replace('{count}', data.reviewCount);
-        titleElement.textContent = dynamicTitle;
-      }
-      {% endif %}
-    };
-    
-    // Ejecutar actualización
-    updateDynamicTitle();
-    
-    // Intentar múltiples veces por si Revie tarda en cargar
-    setTimeout(updateDynamicTitle, 1000);
-    setTimeout(updateDynamicTitle, 2000);
-    
-    // Observer para detectar cuando Revie inyecta contenido
-    var observer = new MutationObserver(function(mutations) {
-      mutations.forEach(function(mutation) {
-        if (mutation.addedNodes.length > 0) {
-          setTimeout(updateDynamicTitle, 100);
-        }
-      });
-    });
-    
-    // Observar cambios en el contenedor principal de Revie
-    var revieContainer = document.getElementById('content-rl-w');
-    if (revieContainer) {
-      observer.observe(revieContainer, {
-        childList: true,
-        subtree: true
-      });
-    }
-    
-  }, 500);
-});
-</script>
-
 <style>
 /* === MEJORAS VISUALES PARA REVIEWS === */
-/* Solo se aplica cuando existen elementos de Revie */
 
 /* Variables CSS personalizables */
 :root {
@@ -100,11 +12,21 @@ window.addEventListener('load', function() {
   --reviews-bg-color: {{ section.settings.background_color }};
   --reviews-border-radius: {{ section.settings.border_radius }}px;
   --reviews-shadow: {{ section.settings.shadow_intensity | divided_by: 100.0 }};
+  
+  /* Colores específicos por elemento */
+  --reviews-accent-line-color: {{ section.settings.accent_line_color | default: section.settings.primary_color }};
+  --reviews-username-color: {{ section.settings.username_color | default: section.settings.primary_color }};
+  --reviews-comment-border-color: {{ section.settings.comment_border_color | default: section.settings.primary_color }};
+  --reviews-tags-color: {{ section.settings.tags_color | default: section.settings.primary_color }};
+  --reviews-pagination-hover-color: {{ section.settings.pagination_hover_color | default: section.settings.primary_color }};
 }
 
 /* === CONTENEDOR PRINCIPAL === */
 #content-rl-w {
   background: var(--reviews-bg-color);
+  {% if section.settings.enable_gradient_bg %}
+  background: linear-gradient(135deg, {{ section.settings.gradient_color_1 }}, {{ section.settings.gradient_color_2 }}) !important;
+  {% endif %}
   border-radius: var(--reviews-border-radius);
   {% if section.settings.enable_container_shadow %}
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
@@ -113,26 +35,8 @@ window.addEventListener('load', function() {
   margin: {{ section.settings.container_margin }}px 0;
 }
 
-/* === OCULTAR RESUMEN COMPLETO === */
-{% if section.settings.hide_entire_summary %}
-#content-rl-w .summary,
-#content-rl-w .content-flex.content-between.summary,
-.content-flex.content-between.summary {
-  display: none !important;
-}
-
-#content-rl-w .summary + hr,
-.content-flex.content-between.summary + hr,
-#content-rl-w > hr:first-of-type,
-#content-rl-w hr:first-child,
-#revieList hr:first-child {
-  display: none !important;
-}
-{% else %}
-/* MOSTRAR RESUMEN NORMAL */
-#content-rl-w .summary,
-#content-rl-w .content-flex.content-between.summary,
-.content-flex.content-between.summary {
+/* === RESUMEN DE REVIEWS (ENCABEZADO) === */
+#content-rl-w .summary {
   background: {{ section.settings.summary_background | default: '#f9fafb' }} !important;
   border-radius: var(--reviews-border-radius) !important;
   padding: {{ section.settings.summary_padding | default: 25 }}px !important;
@@ -142,113 +46,102 @@ window.addEventListener('load', function() {
   {% endif %}
   position: relative !important;
   overflow: hidden !important;
-  border: 1px solid rgba(from var(--reviews-primary-color) r g b / 0.2) !important;
 }
 
-/* === TÍTULO RESUMEN === */
-{% unless section.settings.hide_summary_title %}
-#content-rl-w .summary h2,
-.content-flex.content-between.summary h2 {
+/* === TÍTULO "RESEÑAS" === */
+#content-rl-w .summary h2 {
   color: {{ section.settings.summary_title_color | default: '#111827' }} !important;
   font-size: {{ section.settings.summary_title_size | default: 32 }}px !important;
   font-weight: {{ section.settings.summary_title_weight | default: '700' }} !important;
   margin: 0 !important;
 }
 
-.content-flex.content-between.summary h2:empty::before {
-  content: "{{ section.settings.reviews_title | default: 'Reseñas de Clientes' }}";
-  display: block;
+/* === TEXTO DE CANTIDAD === */
+#content-rl-w .summary .opinions-text {
+  color: {{ section.settings.summary_count_color | default: '#6b7280' }} !important;
+  font-size: {{ section.settings.summary_count_size | default: 16 }}px !important;
+  font-weight: {{ section.settings.summary_count_weight | default: '400' }} !important;
+  margin-top: {{ section.settings.summary_count_spacing | default: 10 }}px !important;
 }
-{% else %}
-#content-rl-w .summary h2,
-.content-flex.content-between.summary h2,
-.content-flex.content-between.summary h2:empty::before {
-  display: none !important;
-}
-{% endunless %}
 
 /* === CAJA DEL PUNTAJE === */
-#content-rl-w .summary .table-start,
-.table-start {
-  background: {{ section.settings.score_box_background | default: '#2563eb' }} !important;
-  color: {{ section.settings.score_box_text | default: '#ffffff' }} !important;
-  font-size: {{ section.settings.score_box_size | default: 28 }}px !important;
+#content-rl-w .summary .table-start {
+  background: {{ section.settings.score_box_background | default: '#d1d5db' }} !important;
+  color: {{ section.settings.score_box_text | default: '#111827' }} !important;
+  font-size: {{ section.settings.score_box_size | default: 24 }}px !important;
   font-weight: {{ section.settings.score_box_weight | default: '700' }} !important;
   padding: {{ section.settings.score_box_padding | default: 15 }}px !important;
-  border-radius: {{ section.settings.score_box_radius | default: 6 }}px !important;
+  border-radius: {{ section.settings.score_box_radius | default: 4 }}px !important;
   margin-right: {{ section.settings.score_box_margin | default: 15 }}px !important;
   {% if section.settings.enable_score_shadow %}
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
   {% endif %}
   min-width: {{ section.settings.score_box_width | default: 70 }}px !important;
   text-align: center !important;
   transition: all 0.3s ease !important;
 }
 
-/* === TEXTO DE CANTIDAD === */
-#content-rl-w .summary .opinions-text,
-.opinions-text {
-  color: {{ section.settings.summary_count_color | default: '#6b7280' }} !important;
-  font-size: {{ section.settings.summary_count_size | default: 16 }}px !important;
-  font-weight: {{ section.settings.summary_count_weight | default: '400' }} !important;
-  margin-top: {{ section.settings.summary_count_spacing | default: 10 }}px !important;
-  text-transform: capitalize !important;
+/* === ESTRELLAS DEL RESUMEN === */
+#content-rl-w .summary [data-starlist] {
+  font-size: {{ section.settings.summary_star_size | default: 28 }}px !important;
+  {% if section.settings.enable_summary_star_glow %}
+  filter: drop-shadow(0 2px 4px var(--reviews-star-color)40) !important;
+  {% endif %}
 }
 
-/* Tabla del resumen */
-.content-flex.content-between.summary table.table {
-  background: transparent !important;
-  border: none !important;
-  margin: 0 !important;
+/* === LAYOUT DEL RESUMEN === */
+#content-rl-w .summary .content-flex.content-between {
+  align-items: {{ section.settings.summary_alignment | default: 'center' }} !important;
+  gap: {{ section.settings.summary_gap | default: 20 }}px !important;
 }
 
-.content-flex.content-between.summary table.table tr th,
-.content-flex.content-between.summary table.table tr td {
-  border: none !important;
-  padding: 0 !important;
-  vertical-align: middle !important;
-  background: transparent !important;
+/* === RESPONSIVE PARA RESUMEN === */
+@media (max-width: 768px) {
+  #content-rl-w .summary {
+    padding: {{ section.settings.summary_mobile_padding | default: 20 }}px !important;
+    {% if section.settings.summary_mobile_stack %}
+    flex-direction: column !important;
+    text-align: center !important;
+    {% endif %}
+  }
+  
+  #content-rl-w .summary h2 {
+    font-size: calc({{ section.settings.summary_title_size | default: 32 }}px * 0.85) !important;
+  }
+  
+  #content-rl-w .summary .table-start {
+    font-size: calc({{ section.settings.score_box_size | default: 24 }}px * 0.9) !important;
+    padding: calc({{ section.settings.score_box_padding | default: 15 }}px * 0.8) !important;
+  }
+  
+  {% if section.settings.summary_mobile_stack %}
+  #content-rl-w .summary .content-flex.content-between {
+    gap: 20px !important;
+  }
+  
+  #content-rl-w .summary table {
+    margin: 0 auto !important;
+  }
+  {% endif %}
 }
-{% endif %}
 
 /* === ESTRELLAS MEJORADAS === */
 #content-rl-w [data-starlist],
 #content-rl-w [data-star] {
   font-size: {{ section.settings.star_size }}px !important;
   {% if section.settings.enable_star_glow %}
-  filter: drop-shadow(0 0 3px rgba(from var(--reviews-star-color) r g b / 0.5));
+  filter: drop-shadow(0 0 3px var(--reviews-star-color)50);
   {% endif %}
 }
 
 #content-rl-w [data-starlist]::before,
 #content-rl-w [data-star]::before {
-  color: rgba(from var(--reviews-star-color) r g b / 0.3) !important;
+  color: var(--reviews-star-color)30 !important;
 }
 
 #content-rl-w [data-starlist]::after,
 #content-rl-w [data-star]::after {
   color: var(--reviews-star-color) !important;
-}
-
-/* === ARREGLAR SUPERPOSICIÓN ESTRELLAS-FECHA === */
-.detail-star .content-flex.content-flex-wrap {
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  gap: {{ section.settings.stars_spacing | default: 8 }}px !important;
-}
-
-.detail-star .content-flex.content-flex-wrap i[data-starlist],
-.detail-star .content-flex.content-flex-wrap i[data-stre] {
-  display: block !important;
-  margin-bottom: {{ section.settings.stars_spacing | default: 8 }}px !important;
-  line-height: 1.2 !important;
-}
-
-.detail-star .content-flex.content-flex-wrap label {
-  margin-top: 0 !important;
-  margin-left: 0 !important;
-  display: block !important;
-  line-height: 1.4 !important;
 }
 
 /* === TARJETAS DE REVIEWS INDIVIDUALES === */
@@ -282,30 +175,28 @@ window.addEventListener('load', function() {
   left: 0;
   width: 100%;
   height: 4px;
-  background: linear-gradient(90deg, var(--reviews-primary-color), var(--reviews-secondary-color));
+  background: linear-gradient(90deg, var(--reviews-accent-line-color), var(--reviews-secondary-color));
   border-radius: var(--reviews-border-radius) var(--reviews-border-radius) 0 0;
 }
 {% endif %}
 
 /* === INFORMACIÓN DEL USUARIO === */
 .detail-star b {
-  color: var(--reviews-primary-color) !important;
+  color: var(--reviews-username-color) !important;
   font-size: {{ section.settings.username_size }}px !important;
   font-weight: {{ section.settings.username_weight }} !important;
 }
 
-/* === BANDERA DE PAÍS CONFIGURABLE === */
-{% if section.settings.enable_country_flag %}
+/* === BANDERA DOMINICANA AUTOMÁTICA === */
 .detail-star b::after {
-  content: "{{ section.settings.country_flag | default: '🇩🇴' }}";
-  margin-left: {{ section.settings.flag_spacing | default: 8 }}px;
-  font-size: {{ section.settings.flag_size | default: 16 }}px;
+  content: "🇩🇴";
+  margin-left: 8px;
+  font-size: 16px;
   display: inline-block;
 }
-{% endif %}
 
 .detail-star label {
-  color: rgba(from var(--reviews-text-color) r g b / 0.7) !important;
+  color: var(--reviews-text-color)70 !important;
   font-size: {{ section.settings.date_size }}px !important;
 }
 
@@ -326,9 +217,9 @@ window.addEventListener('load', function() {
   {% if section.settings.enable_comment_styling %}
   font-style: {{ section.settings.comment_style }};
   padding: 15px;
-  background: rgba(from var(--reviews-bg-color) r g b / 0.5);
+  background: var(--reviews-bg-color)50;
   border-radius: calc(var(--reviews-border-radius) - 4px);
-  border-left: 4px solid var(--reviews-primary-color);
+  border-left: 4px solid var(--reviews-comment-border-color);
   {% endif %}
 }
 
@@ -342,6 +233,29 @@ window.addEventListener('load', function() {
   border: none !important;
 }
 {% endif %}
+
+/* === MULTIMEDIA MEJORADA === */
+.content-media-revie {
+  gap: {{ section.settings.media_spacing }}px !important;
+  margin-top: {{ section.settings.media_top_spacing }}px !important;
+}
+
+.imgn-rv img,
+.imgn-rv video {
+  border-radius: calc(var(--reviews-border-radius) - 2px) !important;
+  transition: all 0.3s ease !important;
+  {% if section.settings.enable_media_shadow %}
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+  {% endif %}
+}
+
+.imgn-rv img:hover,
+.imgn-rv video:hover {
+  {% if section.settings.enable_media_hover %}
+  transform: scale(1.05) !important;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+  {% endif %}
+}
 
 /* === PAGINACIÓN MODERNA === */
 .paginationRevie {
@@ -361,7 +275,7 @@ window.addEventListener('load', function() {
 }
 
 .paginationRevie a:hover:not(.disabled) {
-  background: var(--reviews-primary-color) !important;
+  background: var(--reviews-pagination-hover-color) !important;
   color: white !important;
   transform: translateY(-1px) !important;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
@@ -373,11 +287,41 @@ window.addEventListener('load', function() {
   background: #f5f5f5 !important;
 }
 
+/* === MODAL MEJORADO === */
+.modalRevie {
+  backdrop-filter: blur(8px) !important;
+  background-color: rgba(0,0,0,0.85) !important;
+}
+
+.modalRevie .modal-content {
+  border-radius: var(--reviews-border-radius) !important;
+  {% if section.settings.enable_modal_shadow %}
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3) !important;
+  {% endif %}
+}
+
+.modalRevie .closeModal {
+  background: rgba(255,255,255,0.2) !important;
+  border-radius: 50% !important;
+  width: 50px !important;
+  height: 50px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+  transition: all 0.3s ease !important;
+}
+
+.modalRevie .closeModal:hover {
+  background: rgba(255,255,255,0.3) !important;
+  transform: scale(1.1) !important;
+}
+
 /* === SEPARADORES MEJORADOS === */
 #content-rl-w hr {
   border: none !important;
   height: 2px !important;
-  background: linear-gradient(90deg, transparent, rgba(from var(--reviews-primary-color) r g b / 0.3), transparent) !important;
+  background: linear-gradient(90deg, transparent, var(--reviews-primary-color)30, transparent) !important;
   margin: {{ section.settings.separator_spacing }}px 0 !important;
 }
 
@@ -386,7 +330,35 @@ window.addEventListener('load', function() {
   display: none !important;
 }
 
-/* === RESPONSIVE === */
+{% if section.settings.hide_empty_comments %}
+/* === OCULTAR LÍNEA CUANDO NO HAY COMENTARIO === */
+.commentRevie:empty {
+  display: none !important;
+}
+
+/* Ocultar línea visual cuando el comentario está vacío */
+.detail-star .commentRevie:empty::before,
+.detail-star .commentRevie[style*="display: none"]::before {
+  display: none !important;
+}
+
+/* Eliminar cualquier borde izquierdo cuando no hay comentario */
+.detail-star:has(.commentRevie:empty) .commentRevie,
+.detail-star .commentRevie:empty {
+  border-left: none !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* Fallback para navegadores que no soportan :has() */
+.detail-star .commentRevie[style*="display: none"],
+.detail-star .commentRevie:empty {
+  border: none !important;
+  background: transparent !important;
+}
+{% endif %}
+
+/* === RESPONSIVE MEJORADO === */
 @media (max-width: 768px) {
   #content-rl-w {
     padding: {{ section.settings.mobile_padding }}px !important;
@@ -401,47 +373,46 @@ window.addEventListener('load', function() {
     padding: {{ section.settings.mobile_pagination_padding }}px !important;
     font-size: 14px !important;
   }
+}
 
-  {% if section.settings.mobile_vertical_layout and section.settings.hide_entire_summary == false %}
-  /* Layout vertical forzado en móvil */
-  .content-flex.content-between.summary {
-    flex-direction: column !important;
-    align-items: center !important;
-    text-align: center !important;
-    gap: 20px !important;
+/* === ANIMACIONES DE ENTRADA === */
+{% if section.settings.enable_animations %}
+.detail-star {
+  animation: fadeInUp 0.6s ease forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.detail-star:nth-child(1) { animation-delay: 0.1s; }
+.detail-star:nth-child(2) { animation-delay: 0.2s; }
+.detail-star:nth-child(3) { animation-delay: 0.3s; }
+.detail-star:nth-child(4) { animation-delay: 0.4s; }
+.detail-star:nth-child(5) { animation-delay: 0.5s; }
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  
-  .content-flex.content-column.content-align-start {
-    order: 2 !important;
-    align-items: center !important;
-    text-align: center !important;
-  }
-  
-  .content-flex.content-between.summary > div:last-child {
-    order: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    gap: 15px !important;
-  }
-  
-  .content-flex.content-between.summary table.table tr {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    gap: 15px !important;
-  }
-  
-  .table-start {
-    margin-right: 0 !important;
-  }
-  
-  {% if section.settings.hide_mobile_count %}
-  .opinions-text {
-    display: none !important;
-  }
-  {% endif %}
-  {% endif %}
+}
+{% endif %}
+
+/* === TAGS MEJORADOS === */
+#revieDataIA .tg-lst div {
+  background: var(--reviews-tags-color)10 !important;
+  color: var(--reviews-tags-color) !important;
+  border: 2px solid var(--reviews-tags-color)20 !important;
+  border-radius: var(--reviews-border-radius) !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+}
+
+#revieDataIA .tg-lst div:hover,
+#revieDataIA .tg-lst div.activeRV {
+  background: var(--reviews-tags-color) !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
 }
 
 </style>
@@ -451,6 +422,8 @@ window.addEventListener('load', function() {
 {% schema %}
 {
   "name": "🎨 Reviews Mejorados",
+  "tag": "section",
+  "class": "reviews-enhancement-section",
   "settings": [
     {
       "type": "header",
@@ -501,6 +474,43 @@ window.addEventListener('load', function() {
     },
     {
       "type": "header",
+      "content": "🎯 Colores Específicos"
+    },
+    {
+      "type": "color",
+      "id": "accent_line_color",
+      "label": "Línea decorativa tarjetas",
+      "default": "#2563eb",
+      "info": "Línea superior de cada tarjeta de review"
+    },
+    {
+      "type": "color",
+      "id": "username_color",
+      "label": "Nombre de usuario",
+      "default": "#2563eb",
+      "info": "Color del nombre del cliente"
+    },
+    {
+      "type": "color",
+      "id": "comment_border_color",
+      "label": "Borde de comentarios",
+      "default": "#2563eb",
+      "info": "Línea izquierda de comentarios (si está habilitado)"
+    },
+    {
+      "type": "color",
+      "id": "tags_color",
+      "label": "Etiquetas de filtro",
+      "default": "#2563eb"
+    },
+    {
+      "type": "color",
+      "id": "pagination_hover_color",
+      "label": "Hover paginación",
+      "default": "#2563eb"
+    },
+    {
+      "type": "header",
       "content": "📦 Contenedor y Layout"
     },
     {
@@ -530,47 +540,27 @@ window.addEventListener('load', function() {
       "default": true
     },
     {
-      "type": "header",
-      "content": "🎛️ Control de Visibilidad"
+      "type": "checkbox",
+      "id": "enable_gradient_bg",
+      "label": "Fondo degradado",
+      "default": false,
+      "info": "Aplica degradado al contenedor principal"
     },
     {
-      "type": "checkbox",
-      "id": "hide_entire_summary",
-      "label": "🚫 Ocultar resumen completo",
-      "default": false,
-      "info": "Oculta TODO: puntuación, estrellas, cantidad y línea. Los reviews empezarán directamente."
+      "type": "color",
+      "id": "gradient_color_1",
+      "label": "Color degradado inicio",
+      "default": "#f8fafc"
+    },
+    {
+      "type": "color",
+      "id": "gradient_color_2",
+      "label": "Color degradado final",
+      "default": "#e2e8f0"
     },
     {
       "type": "header",
       "content": "📊 Resumen de Reviews"
-    },
-    {
-      "type": "text",
-      "id": "reviews_title",
-      "label": "Título personalizado",
-      "default": "Reseñas de Clientes",
-      "info": "Se mostrará si el h2 está vacío y el título está activado"
-    },
-    {
-      "type": "checkbox",
-      "id": "hide_summary_title",
-      "label": "Ocultar título del resumen",
-      "default": false,
-      "info": "Oculta completamente el título del header"
-    },
-    {
-      "type": "checkbox",
-      "id": "enable_dynamic_title",
-      "label": "🔄 Título dinámico con datos reales",
-      "default": false,
-      "info": "Reemplaza el título con datos reales de puntuación y cantidad"
-    },
-    {
-      "type": "text",
-      "id": "dynamic_title_template",
-      "label": "Plantilla título dinámico",
-      "default": "⭐ {rating} | {count} Opiniones Verificadas",
-      "info": "Usa {rating} para puntuación y {count} para cantidad"
     },
     {
       "type": "color",
@@ -612,6 +602,10 @@ window.addEventListener('load', function() {
       "step": 5,
       "label": "Intensidad sombra",
       "default": 15
+    },
+    {
+      "type": "header",
+      "content": "📝 Texto del Resumen"
     },
     {
       "type": "color",
@@ -688,13 +682,13 @@ window.addEventListener('load', function() {
       "type": "color",
       "id": "score_box_background",
       "label": "Fondo de la caja",
-      "default": "#2563eb"
+      "default": "#d1d5db"
     },
     {
       "type": "color",
       "id": "score_box_text",
       "label": "Color del número",
-      "default": "#ffffff"
+      "default": "#111827"
     },
     {
       "type": "range",
@@ -704,7 +698,7 @@ window.addEventListener('load', function() {
       "step": 2,
       "unit": "px",
       "label": "Tamaño del número",
-      "default": 28
+      "default": 24
     },
     {
       "type": "select",
@@ -735,7 +729,7 @@ window.addEventListener('load', function() {
       "step": 2,
       "unit": "px",
       "label": "Radio de bordes",
-      "default": 6
+      "default": 4
     },
     {
       "type": "range",
@@ -774,7 +768,7 @@ window.addEventListener('load', function() {
       "max": 32,
       "step": 2,
       "unit": "px",
-      "label": "Tamaño estrellas",
+      "label": "Tamaño estrellas generales",
       "default": 24
     },
     {
@@ -785,14 +779,44 @@ window.addEventListener('load', function() {
     },
     {
       "type": "range",
-      "id": "stars_spacing",
-      "min": 6,
-      "max": 16,
+      "id": "summary_star_size",
+      "min": 20,
+      "max": 36,
       "step": 2,
       "unit": "px",
-      "label": "Espaciado estrellas-fecha",
-      "default": 8,
-      "info": "Evita superposición en reviews individuales"
+      "label": "Tamaño estrellas del resumen",
+      "default": 28
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_summary_star_glow",
+      "label": "Brillo estrellas resumen",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "📐 Layout del Resumen"
+    },
+    {
+      "type": "select",
+      "id": "summary_alignment",
+      "label": "Alineación vertical",
+      "options": [
+        { "value": "flex-start", "label": "Superior" },
+        { "value": "center", "label": "Centro" },
+        { "value": "flex-end", "label": "Inferior" }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "range",
+      "id": "summary_gap",
+      "min": 15,
+      "max": 40,
+      "step": 5,
+      "unit": "px",
+      "label": "Espaciado entre elementos",
+      "default": 20
     },
     {
       "type": "header",
@@ -913,44 +937,6 @@ window.addEventListener('load', function() {
     },
     {
       "type": "header",
-      "content": "🏳️ Bandera de País"
-    },
-    {
-      "type": "checkbox",
-      "id": "enable_country_flag",
-      "label": "Mostrar bandera de país",
-      "default": true,
-      "info": "Agrega emoji de bandera junto al nombre"
-    },
-    {
-      "type": "text",
-      "id": "country_flag",
-      "label": "Emoji de bandera",
-      "default": "🇩🇴",
-      "info": "Puedes usar cualquier emoji: 🇺🇸 🇲🇽 🇨🇴 🇦🇷 🇪🇸"
-    },
-    {
-      "type": "range",
-      "id": "flag_size",
-      "min": 12,
-      "max": 20,
-      "step": 1,
-      "unit": "px",
-      "label": "Tamaño bandera",
-      "default": 16
-    },
-    {
-      "type": "range",
-      "id": "flag_spacing",
-      "min": 4,
-      "max": 12,
-      "step": 2,
-      "unit": "px",
-      "label": "Espaciado bandera",
-      "default": 8
-    },
-    {
-      "type": "header",
       "content": "💬 Comentarios"
     },
     {
@@ -1006,6 +992,42 @@ window.addEventListener('load', function() {
       "label": "Ocultar comentarios vacíos",
       "default": true,
       "info": "Mejora visual ocultando espacios innecesarios"
+    },
+    {
+      "type": "header",
+      "content": "📱 Multimedia"
+    },
+    {
+      "type": "range",
+      "id": "media_spacing",
+      "min": 5,
+      "max": 20,
+      "step": 5,
+      "unit": "px",
+      "label": "Espaciado entre elementos",
+      "default": 10
+    },
+    {
+      "type": "range",
+      "id": "media_top_spacing",
+      "min": 10,
+      "max": 25,
+      "step": 5,
+      "unit": "px",
+      "label": "Espaciado superior",
+      "default": 15
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_media_shadow",
+      "label": "Sombra en imágenes/videos",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_media_hover",
+      "label": "Efectos hover multimedia",
+      "default": true
     },
     {
       "type": "header",
@@ -1106,22 +1128,25 @@ window.addEventListener('load', function() {
       "default": 25
     },
     {
+      "type": "checkbox",
+      "id": "enable_modal_shadow",
+      "label": "Sombra en modal",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "🎭 Efectos y Animaciones"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_animations",
+      "label": "Animaciones de entrada",
+      "default": true,
+      "info": "Aparición secuencial de las tarjetas"
+    },
+    {
       "type": "header",
       "content": "📱 Responsive (Móvil)"
-    },
-    {
-      "type": "checkbox",
-      "id": "mobile_vertical_layout",
-      "label": "Layout vertical en móvil",
-      "default": true,
-      "info": "Puntuación arriba, estrellas abajo en móvil"
-    },
-    {
-      "type": "checkbox",
-      "id": "hide_mobile_count",
-      "label": "Ocultar cantidad en móvil",
-      "default": false,
-      "info": "Oculta 'X OPINIONES' en pantallas pequeñas"
     },
     {
       "type": "range",
@@ -1162,54 +1187,28 @@ window.addEventListener('load', function() {
       "unit": "px",
       "label": "Padding paginación",
       "default": 8
+    },
+    {
+      "type": "range",
+      "id": "summary_mobile_padding",
+      "min": 15,
+      "max": 30,
+      "step": 5,
+      "unit": "px",
+      "label": "Padding resumen móvil",
+      "default": 20
+    },
+    {
+      "type": "checkbox",
+      "id": "summary_mobile_stack",
+      "label": "Apilar resumen en móvil",
+      "default": true,
+      "info": "Organiza elementos en columna para pantallas pequeñas"
     }
   ],
   "presets": [
     {
-      "name": "🎨 Reviews Mejorados - Azul",
-      "settings": {
-        "enable_reviews_enhancement": true,
-        "primary_color": "#2563eb",
-        "secondary_color": "#3b82f6",
-        "star_color": "#fbbf24"
-      }
-    },
-    {
-      "name": "🟢 Reviews Modernos - Verde",
-      "settings": {
-        "enable_reviews_enhancement": true,
-        "primary_color": "#059669",
-        "secondary_color": "#10b981",
-        "star_color": "#f59e0b"
-      }
-    },
-    {
-      "name": "🟣 Reviews Elegantes - Púrpura",
-      "settings": {
-        "enable_reviews_enhancement": true,
-        "primary_color": "#7c3aed",
-        "secondary_color": "#8b5cf6",
-        "star_color": "#f59e0b"
-      }
-    },
-    {
-      "name": "🔴 Reviews Dinámicos - Rojo",
-      "settings": {
-        "enable_reviews_enhancement": true,
-        "primary_color": "#dc2626",
-        "secondary_color": "#ef4444",
-        "star_color": "#fbbf24"
-      }
-    },
-    {
-      "name": "⚫ Reviews Minimalista - Dark",
-      "settings": {
-        "enable_reviews_enhancement": true,
-        "primary_color": "#374151",
-        "secondary_color": "#4b5563",
-        "star_color": "#fbbf24",
-        "background_color": "#f9fafb"
-      }
+      "name": "🎨 Reviews Mejorados"
     }
   ]
 }
