@@ -1,9 +1,9 @@
 {%- if section.settings.enable_reviews_enhancement -%}
 
 <style>
-/* === MEJORAS VISUALES PARA REVIEWS - VERSIÓN OPTIMIZADA === */
+/* === MEJORAS VISUALES PARA REVIEWS === */
 
-/* Variables CSS mejoradas con soporte RGB para transparencias */
+/* Variables CSS personalizables */
 :root {
   --reviews-primary-color: {{ section.settings.primary_color }};
   --reviews-secondary-color: {{ section.settings.secondary_color }};
@@ -13,20 +13,7 @@
   --reviews-border-radius: {{ section.settings.border_radius }}px;
   --reviews-shadow: {{ section.settings.shadow_intensity | divided_by: 100.0 }};
   
-  /* Variables RGB para transparencias - MÉTODO COMPATIBLE */
-  {% comment %} Convertimos hex a RGB manualmente ya que hex_to_decimal no existe {% endcomment %}
-  {% assign primary_hex = section.settings.primary_color | remove: '#' %}
-  {% assign star_hex = section.settings.star_color | remove: '#' %}
-  {% assign text_hex = section.settings.text_color | remove: '#' %}
-  {% assign bg_hex = section.settings.background_color | remove: '#' %}
-  
-  {% comment %} Usar valores predefinidos comunes o fallback a valores seguros {% endcomment %}
-  --reviews-primary-rgb: 37, 99, 235; /* Fallback azul */
-  --reviews-star-rgb: 251, 191, 36; /* Fallback dorado */
-  --reviews-text-rgb: 55, 65, 81; /* Fallback gris */
-  --reviews-bg-rgb: 255, 255, 255; /* Fallback blanco */
-  
-  /* Colores específicos con fallbacks */
+  /* Colores específicos por elemento */
   --reviews-accent-line-color: {{ section.settings.accent_line_color | default: section.settings.primary_color }};
   --reviews-username-color: {{ section.settings.username_color | default: section.settings.primary_color }};
   --reviews-comment-border-color: {{ section.settings.comment_border_color | default: section.settings.primary_color }};
@@ -35,20 +22,6 @@
 }
 
 /* === CONTENEDOR PRINCIPAL === */
-.reviews-enhancement-container {
-  background: var(--reviews-bg-color);
-  {% if section.settings.enable_gradient_bg %}
-  background: linear-gradient(135deg, {{ section.settings.gradient_color_1 }}, {{ section.settings.gradient_color_2 }}) !important;
-  {% endif %}
-  border-radius: var(--reviews-border-radius);
-  {% if section.settings.enable_container_shadow %}
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  {% endif %}
-  padding: {{ section.settings.container_padding }}px;
-  margin: {{ section.settings.container_margin }}px 0;
-}
-
-/* Aplicar estilos al contenedor existente */
 #content-rl-w {
   background: var(--reviews-bg-color);
   {% if section.settings.enable_gradient_bg %}
@@ -62,8 +35,7 @@
   margin: {{ section.settings.container_margin }}px 0;
 }
 
-/* === RESUMEN DE REVIEWS === */
-.reviews-summary,
+/* === RESUMEN DE REVIEWS (ENCABEZADO) === */
 #content-rl-w .summary {
   background: {{ section.settings.summary_background | default: '#f9fafb' }} !important;
   border-radius: var(--reviews-border-radius) !important;
@@ -76,8 +48,7 @@
   overflow: hidden !important;
 }
 
-/* === TÍTULO DEL RESUMEN === */
-.reviews-title,
+/* === TÍTULO "RESEÑAS" === */
 #content-rl-w .summary h2 {
   color: {{ section.settings.summary_title_color | default: '#111827' }} !important;
   font-size: {{ section.settings.summary_title_size | default: 32 }}px !important;
@@ -86,7 +57,6 @@
 }
 
 /* === TEXTO DE CANTIDAD === */
-.reviews-count-text,
 #content-rl-w .summary .opinions-text {
   color: {{ section.settings.summary_count_color | default: '#6b7280' }} !important;
   font-size: {{ section.settings.summary_count_size | default: 16 }}px !important;
@@ -95,7 +65,6 @@
 }
 
 /* === CAJA DEL PUNTAJE === */
-.reviews-score-box,
 #content-rl-w .summary .table-start {
   background: {{ section.settings.score_box_background | default: '#d1d5db' }} !important;
   color: {{ section.settings.score_box_text | default: '#111827' }} !important;
@@ -109,84 +78,73 @@
   {% endif %}
   min-width: {{ section.settings.score_box_width | default: 70 }}px !important;
   text-align: center !important;
-  -webkit-transition: all 0.3s ease !important;
-  -moz-transition: all 0.3s ease !important;
   transition: all 0.3s ease !important;
 }
 
-/* === ESTRELLAS CORREGIDAS === */
-/* Estrellas del resumen */
-.reviews-summary-stars,
+/* === ESTRELLAS DEL RESUMEN === */
 #content-rl-w .summary [data-starlist] {
   font-size: {{ section.settings.summary_star_size | default: 28 }}px !important;
   {% if section.settings.enable_summary_star_glow %}
-  -webkit-filter: drop-shadow(0 2px 4px rgba(var(--reviews-star-rgb), 0.4)) !important;
-  filter: drop-shadow(0 2px 4px rgba(var(--reviews-star-rgb), 0.4)) !important;
+  filter: drop-shadow(0 2px 4px var(--reviews-star-color)40) !important;
   {% endif %}
-}
-
-/* Estrellas generales - CORREGIDO: Separar data-starlist y data-star */
-.reviews-stars,
-#content-rl-w [data-starlist] {
-  font-size: {{ section.settings.star_size }}px !important;
-  text-align: left;
-  direction: initial;
-  font-family: sans-serif;
-  font-style: normal;
-  display: inline-block;
-  position: relative;
-  unicode-bidi: bidi-override;
-  {% if section.settings.enable_star_glow %}
-  -webkit-filter: drop-shadow(0 0 3px rgba(var(--reviews-star-rgb), 0.5));
-  filter: drop-shadow(0 0 3px rgba(var(--reviews-star-rgb), 0.5));
-  {% endif %}
-}
-
-#content-rl-w [data-star] {
-  font-size: {{ section.settings.star_size }}px !important;
-  text-align: left;
-  direction: initial;
-  font-family: sans-serif;
-  font-style: normal;
-  display: inline-block;
-  position: relative;
-  unicode-bidi: bidi-override;
-  {% if section.settings.enable_star_glow %}
-  -webkit-filter: drop-shadow(0 0 3px rgba(var(--reviews-star-rgb), 0.5));
-  filter: drop-shadow(0 0 3px rgba(var(--reviews-star-rgb), 0.5));
-  {% endif %}
-}
-
-/* Pseudo-elementos de estrellas - CORREGIDO */
-#content-rl-w [data-starlist]::before,
-#content-rl-w [data-star]::before {
-  display: block;
-  content: '☆☆☆☆☆';
-  color: rgba(var(--reviews-star-rgb), 0.3) !important;
-}
-
-#content-rl-w [data-starlist]::after,
-#content-rl-w [data-star]::after {
-  white-space: nowrap;
-  position: absolute;
-  top: 0;
-  left: 0;
-  content: '★★★★★';
-  width: 0;
-  color: var(--reviews-star-color) !important;
-  overflow: hidden;
-  height: 100%;
 }
 
 /* === LAYOUT DEL RESUMEN === */
-.reviews-summary-layout,
 #content-rl-w .summary .content-flex.content-between {
   align-items: {{ section.settings.summary_alignment | default: 'center' }} !important;
   gap: {{ section.settings.summary_gap | default: 20 }}px !important;
 }
 
-/* === TARJETAS DE REVIEWS === */
-.reviews-card,
+/* === RESPONSIVE PARA RESUMEN === */
+@media (max-width: 768px) {
+  #content-rl-w .summary {
+    padding: {{ section.settings.summary_mobile_padding | default: 20 }}px !important;
+    {% if section.settings.summary_mobile_stack %}
+    flex-direction: column !important;
+    text-align: center !important;
+    {% endif %}
+  }
+  
+  #content-rl-w .summary h2 {
+    font-size: calc({{ section.settings.summary_title_size | default: 32 }}px * 0.85) !important;
+  }
+  
+  #content-rl-w .summary .table-start {
+    font-size: calc({{ section.settings.score_box_size | default: 24 }}px * 0.9) !important;
+    padding: calc({{ section.settings.score_box_padding | default: 15 }}px * 0.8) !important;
+  }
+  
+  {% if section.settings.summary_mobile_stack %}
+  #content-rl-w .summary .content-flex.content-between {
+    gap: 20px !important;
+  }
+  
+  #content-rl-w .summary table {
+    margin: 0 auto !important;
+  }
+  {% endif %}
+}
+
+/* === ESTRELLAS MEJORADAS === */
+#content-rl-w [data-starlist],
+#content-rl-w [data-star] {
+  font-size: {{ section.settings.star_size }}px !important;
+  {% if section.settings.enable_star_glow %}
+  filter: drop-shadow(0 0 3px var(--reviews-star-color)50);
+  {% endif %}
+}
+
+#content-rl-w [data-starlist]::before,
+#content-rl-w [data-star]::before {
+  color: var(--reviews-star-color)30 !important;
+}
+
+#content-rl-w [data-starlist]::after,
+#content-rl-w [data-star]::after {
+  color: var(--reviews-star-color) !important;
+}
+
+/* === TARJETAS DE REVIEWS INDIVIDUALES === */
 .detail-star {
   background: {{ section.settings.card_background }} !important;
   border-radius: var(--reviews-border-radius) !important;
@@ -196,26 +154,20 @@
   {% if section.settings.enable_card_shadow %}
   box-shadow: 0 2px 12px rgba(0,0,0,var(--reviews-shadow)) !important;
   {% endif %}
-  -webkit-transition: all 0.3s ease !important;
-  -moz-transition: all 0.3s ease !important;
   transition: all 0.3s ease !important;
   position: relative !important;
   overflow: hidden !important;
 }
 
-.reviews-card:hover,
 .detail-star:hover {
   {% if section.settings.enable_hover_effects %}
-  -webkit-transform: translateY(-2px) !important;
-  -moz-transform: translateY(-2px) !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 8px 25px rgba(0,0,0,calc(var(--reviews-shadow) + 0.1)) !important;
   {% endif %}
 }
 
-/* === LÍNEA DECORATIVA - CORREGIDA === */
+/* === LÍNEA DECORATIVA EN TARJETAS === */
 {% if section.settings.enable_card_accent %}
-.reviews-card::before,
 .detail-star::before {
   content: '';
   position: absolute;
@@ -229,15 +181,13 @@
 {% endif %}
 
 /* === INFORMACIÓN DEL USUARIO === */
-.reviews-username,
 .detail-star b {
   color: var(--reviews-username-color) !important;
   font-size: {{ section.settings.username_size }}px !important;
   font-weight: {{ section.settings.username_weight }} !important;
 }
 
-/* === BANDERA DOMINICANA === */
-.reviews-username::after,
+/* === BANDERA DOMINICANA AUTOMÁTICA === */
 .detail-star b::after {
   content: "🇩🇴";
   margin-left: 8px;
@@ -245,26 +195,20 @@
   display: inline-block;
 }
 
-.reviews-date,
 .detail-star label {
-  color: rgba(var(--reviews-text-rgb), 0.7) !important;
+  color: var(--reviews-text-color)70 !important;
   font-size: {{ section.settings.date_size }}px !important;
 }
 
-/* === BADGE VERIFICADO === */
-.reviews-verified,
+/* === BADGE VERIFICADO MEJORADO === */
 .content-name-revie svg {
   {% if section.settings.enable_verified_glow %}
-  -webkit-filter: drop-shadow(0 0 4px #12D385);
   filter: drop-shadow(0 0 4px #12D385);
   {% endif %}
-  -webkit-transform: scale({{ section.settings.verified_badge_size | divided_by: 100.0 }});
-  -moz-transform: scale({{ section.settings.verified_badge_size | divided_by: 100.0 }});
   transform: scale({{ section.settings.verified_badge_size | divided_by: 100.0 }});
 }
 
 /* === COMENTARIOS === */
-.reviews-comment,
 .commentRevie {
   color: var(--reviews-text-color) !important;
   font-size: {{ section.settings.comment_size }}px !important;
@@ -273,81 +217,52 @@
   {% if section.settings.enable_comment_styling %}
   font-style: {{ section.settings.comment_style }};
   padding: 15px;
-  background: rgba(var(--reviews-bg-rgb), 0.5);
+  background: var(--reviews-bg-color)50;
   border-radius: calc(var(--reviews-border-radius) - 4px);
   border-left: 4px solid var(--reviews-comment-border-color);
   {% endif %}
 }
 
-/* === OCULTAR COMENTARIOS VACÍOS - MEJORADO === */
 {% if section.settings.hide_empty_comments %}
-/* Método compatible con todos los navegadores */
-.reviews-comment:empty,
+/* Ocultar área de comentario cuando está vacía */
 .commentRevie:empty,
-.reviews-comment[data-empty="true"],
-.commentRevie[data-empty="true"] {
+.commentRevie[style*="display: none"] {
   display: none !important;
   margin: 0 !important;
   padding: 0 !important;
   border: none !important;
 }
-
-/* Fallback para navegadores modernos */
-@supports selector(:has(*)) {
-  .detail-star:has(.commentRevie:empty) .commentRevie {
-    border-left: none !important;
-    margin-left: 0 !important;
-    padding-left: 0 !important;
-  }
-}
-
-/* Fallback manual */
-.detail-star .commentRevie:empty {
-  border: none !important;
-  background: transparent !important;
-}
 {% endif %}
 
-/* === MULTIMEDIA === */
-.reviews-media,
+/* === MULTIMEDIA MEJORADA === */
 .content-media-revie {
   gap: {{ section.settings.media_spacing }}px !important;
   margin-top: {{ section.settings.media_top_spacing }}px !important;
 }
 
-.reviews-image,
-.reviews-video,
 .imgn-rv img,
 .imgn-rv video {
   border-radius: calc(var(--reviews-border-radius) - 2px) !important;
-  -webkit-transition: all 0.3s ease !important;
-  -moz-transition: all 0.3s ease !important;
   transition: all 0.3s ease !important;
   {% if section.settings.enable_media_shadow %}
   box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
   {% endif %}
 }
 
-.reviews-image:hover,
-.reviews-video:hover,
 .imgn-rv img:hover,
 .imgn-rv video:hover {
   {% if section.settings.enable_media_hover %}
-  -webkit-transform: scale(1.05) !important;
-  -moz-transform: scale(1.05) !important;
   transform: scale(1.05) !important;
   box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
   {% endif %}
 }
 
-/* === PAGINACIÓN === */
-.reviews-pagination,
+/* === PAGINACIÓN MODERNA === */
 .paginationRevie {
   margin: {{ section.settings.pagination_spacing }}px 0 !important;
   gap: {{ section.settings.pagination_gap }}px;
 }
 
-.reviews-pagination-button,
 .paginationRevie a {
   background: {{ section.settings.pagination_bg }} !important;
   color: {{ section.settings.pagination_text }} !important;
@@ -355,23 +270,17 @@
   border-radius: var(--reviews-border-radius) !important;
   padding: {{ section.settings.pagination_padding }}px !important;
   font-weight: {{ section.settings.pagination_weight }} !important;
-  -webkit-transition: all 0.3s ease !important;
-  -moz-transition: all 0.3s ease !important;
   transition: all 0.3s ease !important;
   text-decoration: none !important;
 }
 
-.reviews-pagination-button:hover:not(.disabled),
 .paginationRevie a:hover:not(.disabled) {
   background: var(--reviews-pagination-hover-color) !important;
   color: white !important;
-  -webkit-transform: translateY(-1px) !important;
-  -moz-transform: translateY(-1px) !important;
   transform: translateY(-1px) !important;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
 }
 
-.reviews-pagination-button.disabled,
 .paginationRevie a.disabled {
   opacity: 0.5 !important;
   cursor: not-allowed !important;
@@ -379,15 +288,11 @@
 }
 
 /* === MODAL MEJORADO === */
-.reviews-modal,
 .modalRevie {
-  -webkit-backdrop-filter: blur(8px) !important;
   backdrop-filter: blur(8px) !important;
   background-color: rgba(0,0,0,0.85) !important;
-  z-index: 999999 !important;
 }
 
-.reviews-modal-content,
 .modalRevie .modal-content {
   border-radius: var(--reviews-border-radius) !important;
   {% if section.settings.enable_modal_shadow %}
@@ -395,7 +300,6 @@
   {% endif %}
 }
 
-.reviews-modal-close,
 .modalRevie .closeModal {
   background: rgba(255,255,255,0.2) !important;
   border-radius: 50% !important;
@@ -404,345 +308,114 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  -webkit-backdrop-filter: blur(10px) !important;
   backdrop-filter: blur(10px) !important;
-  -webkit-transition: all 0.3s ease !important;
-  -moz-transition: all 0.3s ease !important;
   transition: all 0.3s ease !important;
 }
 
-.reviews-modal-close:hover,
 .modalRevie .closeModal:hover {
   background: rgba(255,255,255,0.3) !important;
-  -webkit-transform: scale(1.1) !important;
-  -moz-transform: scale(1.1) !important;
   transform: scale(1.1) !important;
 }
 
-/* === SEPARADORES === */
-.reviews-separator,
+/* === SEPARADORES MEJORADOS === */
 #content-rl-w hr {
   border: none !important;
   height: 2px !important;
-  background: linear-gradient(90deg, transparent, rgba(var(--reviews-primary-rgb), 0.3), transparent) !important;
+  background: linear-gradient(90deg, transparent, var(--reviews-primary-color)30, transparent) !important;
   margin: {{ section.settings.separator_spacing }}px 0 !important;
 }
 
-/* Ocultar separador en tarjetas */
-.reviews-card hr,
+/* === OCULTAR SEPARADOR DE TARJETAS === */
 .detail-star hr {
   display: none !important;
 }
 
-/* === ANIMACIONES === */
-{% if section.settings.enable_animations %}
-.reviews-card,
-.detail-star {
-  -webkit-animation: fadeInUp 0.6s ease forwards;
-  animation: fadeInUp 0.6s ease forwards;
-  opacity: 0;
-  -webkit-transform: translateY(20px);
-  -moz-transform: translateY(20px);
-  transform: translateY(20px);
+{% if section.settings.hide_empty_comments %}
+/* === OCULTAR LÍNEA CUANDO NO HAY COMENTARIO === */
+.commentRevie:empty {
+  display: none !important;
 }
 
-.reviews-card:nth-child(1),
-.detail-star:nth-child(1) { 
-  -webkit-animation-delay: 0.1s;
-  animation-delay: 0.1s; 
+/* Ocultar línea visual cuando el comentario está vacío */
+.detail-star .commentRevie:empty::before,
+.detail-star .commentRevie[style*="display: none"]::before {
+  display: none !important;
 }
 
-.reviews-card:nth-child(2),
-.detail-star:nth-child(2) { 
-  -webkit-animation-delay: 0.2s;
-  animation-delay: 0.2s; 
+/* Eliminar cualquier borde izquierdo cuando no hay comentario */
+.detail-star:has(.commentRevie:empty) .commentRevie,
+.detail-star .commentRevie:empty {
+  border-left: none !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
 }
 
-.reviews-card:nth-child(3),
-.detail-star:nth-child(3) { 
-  -webkit-animation-delay: 0.3s;
-  animation-delay: 0.3s; 
-}
-
-.reviews-card:nth-child(4),
-.detail-star:nth-child(4) { 
-  -webkit-animation-delay: 0.4s;
-  animation-delay: 0.4s; 
-}
-
-.reviews-card:nth-child(5),
-.detail-star:nth-child(5) { 
-  -webkit-animation-delay: 0.5s;
-  animation-delay: 0.5s; 
-}
-
-@-webkit-keyframes fadeInUp {
-  to {
-    opacity: 1;
-    -webkit-transform: translateY(0);
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeInUp {
-  to {
-    opacity: 1;
-    -webkit-transform: translateY(0);
-    -moz-transform: translateY(0);
-    transform: translateY(0);
-  }
+/* Fallback para navegadores que no soportan :has() */
+.detail-star .commentRevie[style*="display: none"],
+.detail-star .commentRevie:empty {
+  border: none !important;
+  background: transparent !important;
 }
 {% endif %}
 
-/* === TAGS === */
-.reviews-tags,
-#revieDataIA .tg-lst div {
-  background: rgba(var(--reviews-primary-rgb), 0.1) !important;
-  color: var(--reviews-tags-color) !important;
-  border: 2px solid rgba(var(--reviews-primary-rgb), 0.2) !important;
-  border-radius: var(--reviews-border-radius) !important;
-  font-weight: 600 !important;
-  -webkit-transition: all 0.3s ease !important;
-  -moz-transition: all 0.3s ease !important;
-  transition: all 0.3s ease !important;
-}
-
-.reviews-tags:hover,
-.reviews-tags.active,
-#revieDataIA .tg-lst div:hover,
-#revieDataIA .tg-lst div.activeRV {
-  background: var(--reviews-tags-color) !important;
-  color: white !important;
-  -webkit-transform: translateY(-1px) !important;
-  -moz-transform: translateY(-1px) !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-}
-
-/* === RESPONSIVE === */
+/* === RESPONSIVE MEJORADO === */
 @media (max-width: 768px) {
-  .reviews-enhancement-container,
   #content-rl-w {
     padding: {{ section.settings.mobile_padding }}px !important;
     margin: {{ section.settings.mobile_margin }}px 0 !important;
   }
   
-  .reviews-summary,
-  #content-rl-w .summary {
-    padding: {{ section.settings.summary_mobile_padding | default: 20 }}px !important;
-    {% if section.settings.summary_mobile_stack %}
-    flex-direction: column !important;
-    text-align: center !important;
-    {% endif %}
-  }
-  
-  .reviews-title,
-  #content-rl-w .summary h2 {
-    font-size: calc({{ section.settings.summary_title_size | default: 32 }}px * 0.85) !important;
-  }
-  
-  .reviews-score-box,
-  #content-rl-w .summary .table-start {
-    font-size: calc({{ section.settings.score_box_size | default: 24 }}px * 0.9) !important;
-    padding: calc({{ section.settings.score_box_padding | default: 15 }}px * 0.8) !important;
-  }
-  
-  .reviews-card,
   .detail-star {
     padding: {{ section.settings.mobile_card_padding }}px !important;
   }
   
-  .reviews-pagination-button,
   .paginationRevie a {
     padding: {{ section.settings.mobile_pagination_padding }}px !important;
     font-size: 14px !important;
   }
-  
-  {% if section.settings.summary_mobile_stack %}
-  .reviews-summary-layout,
-  #content-rl-w .summary .content-flex.content-between {
-    gap: 20px !important;
-  }
-  
-  .reviews-summary table,
-  #content-rl-w .summary table {
-    margin: 0 auto !important;
-  }
-  {% endif %}
 }
 
-/* === CORRECCIÓN DE PORCENTAJES PARA ESTRELLAS === */
-/* Data-starlist percentages */
-#content-rl-w [data-starlist^="0.1"]::after,[data-starlist^=".1"]::after{width:2%}
-#content-rl-w [data-starlist^="0.2"]::after,[data-starlist^=".2"]::after{width:4%}
-#content-rl-w [data-starlist^="0.3"]::after,[data-starlist^=".3"]::after{width:6%}
-#content-rl-w [data-starlist^="0.4"]::after,[data-starlist^=".4"]::after{width:8%}
-#content-rl-w [data-starlist^="0.5"]::after,[data-starlist^=".5"]::after{width:10%}
-#content-rl-w [data-starlist^="0.6"]::after,[data-starlist^=".6"]::after{width:12%}
-#content-rl-w [data-starlist^="0.7"]::after,[data-starlist^=".7"]::after{width:14%}
-#content-rl-w [data-starlist^="0.8"]::after,[data-starlist^=".8"]::after{width:16%}
-#content-rl-w [data-starlist^="0.9"]::after,[data-starlist^=".9"]::after{width:18%}
-#content-rl-w [data-starlist^="1"]::after{width:20%}
-#content-rl-w [data-starlist^="1.1"]::after{width:22%}
-#content-rl-w [data-starlist^="1.2"]::after{width:24%}
-#content-rl-w [data-starlist^="1.3"]::after{width:26%}
-#content-rl-w [data-starlist^="1.4"]::after{width:28%}
-#content-rl-w [data-starlist^="1.5"]::after{width:30%}
-#content-rl-w [data-starlist^="1.6"]::after{width:32%}
-#content-rl-w [data-starlist^="1.7"]::after{width:34%}
-#content-rl-w [data-starlist^="1.8"]::after{width:36%}
-#content-rl-w [data-starlist^="1.9"]::after{width:38%}
-#content-rl-w [data-starlist^="2"]::after{width:40%}
-#content-rl-w [data-starlist^="2.1"]::after{width:42%}
-#content-rl-w [data-starlist^="2.2"]::after{width:44%}
-#content-rl-w [data-starlist^="2.3"]::after{width:46%}
-#content-rl-w [data-starlist^="2.4"]::after{width:48%}
-#content-rl-w [data-starlist^="2.5"]::after{width:50%}
-#content-rl-w [data-starlist^="2.6"]::after{width:52%}
-#content-rl-w [data-starlist^="2.7"]::after{width:54%}
-#content-rl-w [data-starlist^="2.8"]::after{width:56%}
-#content-rl-w [data-starlist^="2.9"]::after{width:58%}
-#content-rl-w [data-starlist^="3"]::after{width:60%}
-#content-rl-w [data-starlist^="3.1"]::after{width:62%}
-#content-rl-w [data-starlist^="3.2"]::after{width:64%}
-#content-rl-w [data-starlist^="3.3"]::after{width:66%}
-#content-rl-w [data-starlist^="3.4"]::after{width:68%}
-#content-rl-w [data-starlist^="3.5"]::after{width:70%}
-#content-rl-w [data-starlist^="3.6"]::after{width:72%}
-#content-rl-w [data-starlist^="3.7"]::after{width:74%}
-#content-rl-w [data-starlist^="3.8"]::after{width:76%}
-#content-rl-w [data-starlist^="3.9"]::after{width:78%}
-#content-rl-w [data-starlist^="4"]::after{width:80%}
-#content-rl-w [data-starlist^="4.1"]::after{width:82%}
-#content-rl-w [data-starlist^="4.2"]::after{width:84%}
-#content-rl-w [data-starlist^="4.3"]::after{width:86%}
-#content-rl-w [data-starlist^="4.4"]::after{width:88%}
-#content-rl-w [data-starlist^="4.5"]::after{width:90%}
-#content-rl-w [data-starlist^="4.6"]::after{width:92%}
-#content-rl-w [data-starlist^="4.7"]::after{width:94%}
-#content-rl-w [data-starlist^="4.8"]::after{width:96%}
-#content-rl-w [data-starlist^="4.9"]::after{width:98%}
-#content-rl-w [data-starlist^="5"]::after{width:100%}
-
-/* Data-star percentages */
-#content-rl-w [data-star^="0.1"]::after,[data-star^=".1"]::after{width:2%}
-#content-rl-w [data-star^="0.2"]::after,[data-star^=".2"]::after{width:4%}
-#content-rl-w [data-star^="0.3"]::after,[data-star^=".3"]::after{width:6%}
-#content-rl-w [data-star^="0.4"]::after,[data-star^=".4"]::after{width:8%}
-#content-rl-w [data-star^="0.5"]::after,[data-star^=".5"]::after{width:10%}
-#content-rl-w [data-star^="0.6"]::after,[data-star^=".6"]::after{width:12%}
-#content-rl-w [data-star^="0.7"]::after,[data-star^=".7"]::after{width:14%}
-#content-rl-w [data-star^="0.8"]::after,[data-star^=".8"]::after{width:16%}
-#content-rl-w [data-star^="0.9"]::after,[data-star^=".9"]::after{width:18%}
-#content-rl-w [data-star^="1"]::after{width:20%}
-#content-rl-w [data-star^="1.1"]::after{width:22%}
-#content-rl-w [data-star^="1.2"]::after{width:24%}
-#content-rl-w [data-star^="1.3"]::after{width:26%}
-#content-rl-w [data-star^="1.4"]::after{width:28%}
-#content-rl-w [data-star^="1.5"]::after{width:30%}
-#content-rl-w [data-star^="1.6"]::after{width:32%}
-#content-rl-w [data-star^="1.7"]::after{width:34%}
-#content-rl-w [data-star^="1.8"]::after{width:36%}
-#content-rl-w [data-star^="1.9"]::after{width:38%}
-#content-rl-w [data-star^="2"]::after{width:40%}
-#content-rl-w [data-star^="2.1"]::after{width:42%}
-#content-rl-w [data-star^="2.2"]::after{width:44%}
-#content-rl-w [data-star^="2.3"]::after{width:46%}
-#content-rl-w [data-star^="2.4"]::after{width:48%}
-#content-rl-w [data-star^="2.5"]::after{width:50%}
-#content-rl-w [data-star^="2.6"]::after{width:52%}
-#content-rl-w [data-star^="2.7"]::after{width:54%}
-#content-rl-w [data-star^="2.8"]::after{width:56%}
-#content-rl-w [data-star^="2.9"]::after{width:58%}
-#content-rl-w [data-star^="3"]::after{width:60%}
-#content-rl-w [data-star^="3.1"]::after{width:62%}
-#content-rl-w [data-star^="3.2"]::after{width:64%}
-#content-rl-w [data-star^="3.3"]::after{width:66%}
-#content-rl-w [data-star^="3.4"]::after{width:68%}
-#content-rl-w [data-star^="3.5"]::after{width:70%}
-#content-rl-w [data-star^="3.6"]::after{width:72%}
-#content-rl-w [data-star^="3.7"]::after{width:74%}
-#content-rl-w [data-star^="3.8"]::after{width:76%}
-#content-rl-w [data-star^="3.9"]::after{width:78%}
-#content-rl-w [data-star^="4"]::after{width:80%}
-#content-rl-w [data-star^="4.1"]::after{width:82%}
-#content-rl-w [data-star^="4.2"]::after{width:84%}
-#content-rl-w [data-star^="4.3"]::after{width:86%}
-#content-rl-w [data-star^="4.4"]::after{width:88%}
-#content-rl-w [data-star^="4.5"]::after{width:90%}
-#content-rl-w [data-star^="4.6"]::after{width:92%}
-#content-rl-w [data-star^="4.7"]::after{width:94%}
-#content-rl-w [data-star^="4.8"]::after{width:96%}
-#content-rl-w [data-star^="4.9"]::after{width:98%}
-#content-rl-w [data-star^="5"]::after{width:100%}
-
-/* === ESTILOS DE COMPATIBILIDAD === */
-/* Enlaces de estrellas */
-a.revie-star-content, 
-a.revie-star-content:visited, 
-a.revie-star-content span {
-  color: #292929 !important;
-  text-decoration: none !important;
-  font-size: 16px;
+/* === ANIMACIONES DE ENTRADA === */
+{% if section.settings.enable_animations %}
+.detail-star {
+  animation: fadeInUp 0.6s ease forwards;
+  opacity: 0;
+  transform: translateY(20px);
 }
 
-/* JavaScript fallback para comentarios vacíos */
-[data-reviews-enhanced] .commentRevie:empty {
-  display: none !important;
+.detail-star:nth-child(1) { animation-delay: 0.1s; }
+.detail-star:nth-child(2) { animation-delay: 0.2s; }
+.detail-star:nth-child(3) { animation-delay: 0.3s; }
+.detail-star:nth-child(4) { animation-delay: 0.4s; }
+.detail-star:nth-child(5) { animation-delay: 0.5s; }
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+{% endif %}
+
+/* === TAGS MEJORADOS === */
+#revieDataIA .tg-lst div {
+  background: var(--reviews-tags-color)10 !important;
+  color: var(--reviews-tags-color) !important;
+  border: 2px solid var(--reviews-tags-color)20 !important;
+  border-radius: var(--reviews-border-radius) !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+}
+
+#revieDataIA .tg-lst div:hover,
+#revieDataIA .tg-lst div.activeRV {
+  background: var(--reviews-tags-color) !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
 }
 
 </style>
-
-<!-- JavaScript para mejorar compatibilidad -->
-<script>
-(function() {
-  'use strict';
-  
-  // Marcar contenedor como mejorado
-  function markEnhanced() {
-    const container = document.getElementById('content-rl-w');
-    if (container) {
-      container.setAttribute('data-reviews-enhanced', 'true');
-    }
-  }
-  
-  // Función para ocultar comentarios vacíos en navegadores incompatibles
-  function hideEmptyComments() {
-    const comments = document.querySelectorAll('.commentRevie');
-    comments.forEach(function(comment) {
-      if (comment.textContent.trim() === '' || comment.innerHTML.trim() === '') {
-        comment.setAttribute('data-empty', 'true');
-        comment.style.display = 'none';
-      }
-    });
-  }
-  
-  // Ejecutar cuando el DOM esté listo
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      markEnhanced();
-      hideEmptyComments();
-    });
-  } else {
-    markEnhanced();
-    hideEmptyComments();
-  }
-  
-  // Observer para elementos dinámicos
-  if (typeof MutationObserver !== 'undefined') {
-    const observer = new MutationObserver(function(mutations) {
-      mutations.forEach(function(mutation) {
-        if (mutation.type === 'childList') {
-          hideEmptyComments();
-        }
-      });
-    });
-    
-    const targetNode = document.getElementById('content-rl-w') || document.body;
-    observer.observe(targetNode, { childList: true, subtree: true });
-  }
-})();
-</script>
 
 {%- endif -%}
 
