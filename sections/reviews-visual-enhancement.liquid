@@ -3,6 +3,11 @@
 <script>
 // Sistema dinámico para obtener datos reales de Revie y actualizar el header
 window.addEventListener('load', function() {
+  // Solo ejecutar si existe el contenedor de Revie
+  if (!document.getElementById('content-rl-w') && !document.querySelector('[data-starlist]') && !document.querySelector('.summary')) {
+    return; // Salir si no hay elementos de Revie
+  }
+  
   setTimeout(function() {
     
     // Función para extraer datos dinámicos de Revie
@@ -84,6 +89,7 @@ window.addEventListener('load', function() {
 
 <style>
 /* === MEJORAS VISUALES PARA REVIEWS === */
+/* Solo se aplica cuando existen elementos de Revie */
 
 /* Variables CSS personalizables */
 :root {
@@ -445,8 +451,6 @@ window.addEventListener('load', function() {
 {% schema %}
 {
   "name": "🎨 Reviews Mejorados",
-  "tag": "section",
-  "class": "reviews-enhancement-section",
   "settings": [
     {
       "type": "header",
