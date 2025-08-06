@@ -85,7 +85,7 @@
 #content-rl-w .summary [data-starlist] {
   font-size: {{ section.settings.summary_star_size | default: 28 }}px !important;
   {% if section.settings.enable_summary_star_glow %}
-  filter: drop-shadow(0 2px 4px var(--reviews-star-color)40) !important;
+  filter: drop-shadow(0 2px 4px rgba(from var(--reviews-star-color) r g b / 0.4)) !important;
   {% endif %}
 }
 
@@ -93,6 +93,38 @@
 #content-rl-w .summary .content-flex.content-between {
   align-items: {{ section.settings.summary_alignment | default: 'center' }} !important;
   gap: {{ section.settings.summary_gap | default: 20 }}px !important;
+}
+
+/* === HEADER MEJORADO ADICIONAL === */
+#content-rl-w .summary {
+  border: 1px solid rgba(from var(--reviews-primary-color) r g b / 0.15) !important;
+  background: linear-gradient(135deg, {{ section.settings.summary_background | default: '#f9fafb' }}, {{ section.settings.summary_background | default: '#f9fafb' }}f0) !important;
+  transition: all 0.3s ease !important;
+}
+
+#content-rl-w .summary:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12) !important;
+}
+
+/* === TABLA DEL RESUMEN MEJORADA === */
+#content-rl-w .summary table.table {
+  background: transparent !important;
+  border: none !important;
+  margin: 0 !important;
+}
+
+#content-rl-w .summary table.table tr th,
+#content-rl-w .summary table.table tr td {
+  border: none !important;
+  padding: 0 !important;
+  vertical-align: middle !important;
+  background: transparent !important;
+}
+
+/* === MEJORAS VISUALES DEL LAYOUT === */
+#content-rl-w .summary .content-flex.content-column.content-align-start {
+  gap: {{ section.settings.summary_count_spacing | default: 10 }}px !important;
 }
 
 /* === RESPONSIVE PARA RESUMEN === */
