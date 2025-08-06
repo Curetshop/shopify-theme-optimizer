@@ -1,49 +1,33 @@
-📝 APLICANDO CONTENIDO COMPLETO - PARTE 1/3: HEADER
-{%- comment -%}
-ENHANCED REVIEWS SECTION - PROFESSIONAL & MOBILE-FIRST
-Updated by Pitágora V2.0 with professional header design
-{%- endcomment -%}
+{%- if section.settings.enable_reviews_enhancement -%}
 
-<!-- ENHANCED PROFESSIONAL HEADER - MOBILE-FIRST -->
+<!-- HEADER PERSONALIZADO MEJORADO -->
 <div class="reviews-section-enhanced">
   <div class="reviews-header-professional">
     <div class="reviews-header-content">
       
       <!-- Title Section -->
       <div class="reviews-title-group">
-        <h2 class="reviews-title">{{ section.settings.title | default: 'Reseñas de Clientes' }}</h2>
+        <h2 class="reviews-title">{{ section.settings.reviews_title | default: 'Reseñas de Clientes' }}</h2>
         <p class="reviews-subtitle">{{ section.settings.subtitle | default: 'Opiniones reales de nuestros compradores' }}</p>
       </div>
       
       <!-- Rating Display - Mobile Optimized -->
       <div class="reviews-rating-display">
         <div class="rating-score-container">
-          <div class="rating-score">{{ section.settings.rating | default: 4.88 }}</div>
+          <div class="rating-score" id="custom-rating-score">-</div>
           <div class="rating-info">
-            <div class="stars-container">
-              {%- assign rating = section.settings.rating | default: 4.88 -%}
-              {%- assign full_stars = rating | floor -%}
-              {%- assign has_half_star = rating | modulo: 1 | round: 1 -%}
-              
-              {%- for i in (1..5) -%}
-                {%- if i <= full_stars -%}
-                  <span class="star star-full">★</span>
-                {%- elsif i == full_stars | plus: 1 and has_half_star >= 0.5 -%}
-                  <span class="star star-half">★</span>
-                {%- else -%}
-                  <span class="star star-empty">☆</span>
-                {%- endif -%}
-              {%- endfor -%}
+            <div class="stars-container" id="custom-stars-display">
+              <!-- Las estrellas se generarán dinámicamente -->
             </div>
-            <p class="rating-description">
-              Basado en {{ section.settings.review_count | default: 127 }} reseñas verificadas
+            <p class="rating-description" id="custom-rating-description">
+              Basado en - reseñas verificadas
             </p>
           </div>
         </div>
         
         <!-- Trust Badge -->
         <div class="trust-badge">
-          <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24">
+          <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
           </svg>
           <span>Verificadas</span>
@@ -54,441 +38,1453 @@ Updated by Pitágora V2.0 with professional header design
     <!-- Separator -->
     <div class="reviews-separator"></div>
   </div>
-
-  <!-- Reviews Content -->
-  <div class="reviews-content">
-    {%- if section.blocks.size > 0 -%}
-      {%- for block in section.blocks -%}
-        <div class="review-item" {{ block.shopify_attributes }}>
-          <div class="review-header">
-            <div class="review-rating">
-              {%- assign review_rating = block.settings.rating | default: 5 -%}
-              {%- for i in (1..5) -%}
-                {%- if i <= review_rating -%}
-                  <span class="star filled">★</span>
-                {%- else -%}
-                  <span class="star empty">☆</span>
-                {%- endif -%}
-              {%- endfor -%}
-            </div>
-            <div class="review-date">{{ block.settings.date | default: 'now' | date: '%Y-%m-%d' }}</div>
-          </div>
-          
-          <div class="review-author">
-            <strong>{{ block.settings.author | default: 'Cliente Verificado' }}</strong>
-            {%- if block.settings.location -%}
-              <span class="location">{{ block.settings.location }}</span>
-            {%- endif -%}
-            {%- if block.settings.verified -%}
-              <span class="verified-badge">✓</span>
-            {%- endif -%}
-          </div>
-          
-          <div class="review-text">
-            {{ block.settings.review_text }}
-          </div>
-          
-          {%- if block.settings.image -%}
-            <div class="review-image">
-              <img src="{{ block.settings.image | image_url: width: 200 }}" 
-                   alt="Review image" 
-                   loading="lazy">
-            </div>
-          {%- endif -%}
-        </div>
-      {%- endfor -%}
-    {%- endif -%}
-  </div>
 </div>
 
-<style>
-/* PROFESSIONAL MOBILE-FIRST STYLES */
-.reviews-section-enhanced {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 16px;
-}
+<script>
+// Sistema dinámico para header personalizado de Revie
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    
+    // Función para extraer datos dinámicos de Revie
+    var extractRevieData = function() {
+      var rating = null;
+      var reviewCount = null;
+      
+      // Intentar obtener datos del metafield del producto
+      {% if product.metafields.revie.reviewData %}
+      rating = {{ product.metafields.revie.reviewData.reviewAverageValue | json }};
+      reviewCount = {{ product.metafields.revie.reviewData.reviewCount | json }};
+      {% endif %}
+      
+      // Si no hay metafields, intentar extraer del DOM de Revie
+      if (!rating || !reviewCount) {
+        // Buscar en la caja de puntuación de Revie
+        var scoreBox = document.querySelector('.table-start');
+        if (scoreBox) {
+          var scoreText = scoreBox.textContent.trim();
+          rating = parseFloat(scoreText);
+        }
+        
+        // Buscar cantidad de opiniones
+        var opinionsText = document.querySelector('.opinions-text');
+        if (opinionsText) {
+          var countMatch = opinionsText.textContent.match(/(\d+)/);
+          if (countMatch) {
+            reviewCount = parseInt(countMatch[1]);
+          }
+        }
+      }
+      
+      return { rating: rating, reviewCount: reviewCount };
+    };
+    
+    // Función para generar estrellas
+    var generateStars = function(rating) {
+      if (!rating) return '';
+      
+      var stars = '';
+      var fullStars = Math.floor(rating);
+      var hasHalfStar = (rating % 1) >= 0.5;
+      
+      for (var i = 1; i <= 5; i++) {
+        if (i <= fullStars) {
+          stars += '<span class="star star-full">★</span>';
+        } else if (i === fullStars + 1 && hasHalfStar) {
+          stars += '<span class="star star-half">★</span>';
+        } else {
+          stars += '<span class="star star-empty">☆</span>';
+        }
+      }
+      
+      return stars;
+    };
+    
+    // Función para actualizar header personalizado
+    var updateCustomHeader = function() {
+      var data = extractRevieData();
+      
+      // Actualizar puntuación
+      var scoreElement = document.getElementById('custom-rating-score');
+      if (scoreElement && data.rating) {
+        scoreElement.textContent = data.rating.toFixed(1);
+      }
+      
+      // Actualizar estrellas
+      var starsElement = document.getElementById('custom-stars-display');
+      if (starsElement && data.rating) {
+        starsElement.innerHTML = generateStars(data.rating);
+      }
+      
+      // Actualizar descripción
+      var descElement = document.getElementById('custom-rating-description');
+      if (descElement && data.reviewCount) {
+        descElement.textContent = 'Basado en ' + data.reviewCount + ' reseñas verificadas';
+      }
+      
+      return data.rating || data.reviewCount;
+    };
 
+    {% if section.settings.hide_revie_header %}
+    // Función para ocultar header original de Revie
+    var hideRevieHeader = function() {
+      var selectors = [
+        '.content-flex.content-between.summary',
+        '#content-rl-w .summary',
+        '#revieDataIA .summary',
+        '.summary h2',
+        '.summary .table-start',
+        '.summary .opinions-text',
+        '#content-rl-w > .summary'
+      ];
+      
+      var hidden = false;
+      selectors.forEach(function(selector) {
+        var elements = document.querySelectorAll(selector);
+        if (elements.length > 0) {
+          elements.forEach(function(element) {
+            element.style.display = 'none';
+            hidden = true;
+          });
+        }
+      });
+      
+      return hidden;
+    };
+    {% endif %}
+    
+    // Función principal que maneja todo
+    var processRevieData = function() {
+      updateCustomHeader();
+      {% if section.settings.hide_revie_header %}
+      hideRevieHeader();
+      {% endif %}
+    };
+    
+    // Intentar procesar inmediatamente
+    processRevieData();
+    
+    // Intentar múltiples veces por si Revie tarda en cargar
+    setTimeout(processRevieData, 1000);
+    setTimeout(processRevieData, 2000);
+    setTimeout(processRevieData, 3000);
+    
+    // Observer para detectar cuando Revie inyecta contenido
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.addedNodes.length > 0) {
+          setTimeout(processRevieData, 100);
+        }
+      });
+    });
+    
+    // Observar cambios en el contenedor principal de Revie
+    var revieContainer = document.getElementById('content-rl-w');
+    if (revieContainer) {
+      observer.observe(revieContainer, {
+        childList: true,
+        subtree: true
+      });
+    }
+    
+    // También observar el body por si Revie se inyecta después
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+    
+  }, 500);
+});
+</script>
+
+<style>
+/* === MEJORAS VISUALES PARA REVIEWS === */
+
+/* === ESTILOS DEL HEADER PERSONALIZADO === */
 .reviews-header-professional {
-  background: #ffffff;
-  padding: 24px 0;
-  margin-bottom: 32px;
+  background: linear-gradient(135deg, var(--reviews-primary-color), rgba(from var(--reviews-primary-color) r g b / 0.8));
+  padding: 2rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px rgba(from var(--reviews-primary-color) r g b / 0.1);
+  color: white;
+  text-align: center;
 }
 
 .reviews-header-content {
   display: flex;
-  flex-direction: column;
-  gap: 24px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2rem;
 }
 
-/* Title Section */
 .reviews-title-group {
-  text-align: center;
+  flex: 1;
+  text-align: left;
 }
 
 .reviews-title {
-  font-size: 1.75rem;
+  font-size: 28px;
   font-weight: 700;
-  color: #1a202c;
-  margin: 0 0 8px 0;
-  line-height: 1.2;
-  letter-spacing: -0.025em;
+  margin: 0 0 0.5rem 0;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .reviews-subtitle {
-  font-size: 0.95rem;
-  color: #64748b;
+  font-size: 16px;
   margin: 0;
-  font-weight: 400;
-  line-height: 1.4;
+  opacity: 0.9;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
-/* Rating Display - Mobile Optimized */
 .reviews-rating-display {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 20px;
-  background: #f8fafc;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  gap: 1.5rem;
 }
 
 .rating-score-container {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 1rem;
 }
 
 .rating-score {
-  font-size: 2.25rem;
+  font-size: 42px;
   font-weight: 800;
-  color: #1e293b;
-  line-height: 1;
-  letter-spacing: -0.025em;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  min-width: 80px;
+  text-align: center;
+  background: rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 0.5rem;
+  backdrop-filter: blur(10px);
 }
 
 .rating-info {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
 }
 
 .stars-container {
   display: flex;
-  justify-content: center;
-  align-items: center;
   gap: 2px;
-  margin-bottom: 8px;
 }
 
 .star {
-  font-size: 1.25rem;
-  line-height: 1;
+  font-size: 24px;
+  color: #FFD700;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 .star-full {
-  color: #f59e0b;
+  opacity: 1;
 }
 
 .star-half {
-  color: #f59e0b;
-  opacity: 0.5;
+  opacity: 0.7;
 }
 
 .star-empty {
-  color: #d1d5db;
+  opacity: 0.3;
 }
 
 .rating-description {
-  font-size: 0.875rem;
-  color: #64748b;
+  font-size: 14px;
   margin: 0;
-  font-weight: 500;
+  opacity: 0.9;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
-/* Trust Badge */
 .trust-badge {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: #dcfce7;
-  color: #166534;
+  gap: 0.5rem;
+  background: rgba(255,255,255,0.2);
+  padding: 0.5rem 1rem;
   border-radius: 20px;
-  font-size: 0.75rem;
+  font-size: 14px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: white;
+  backdrop-filter: blur(10px);
 }
 
 .check-icon {
-  fill: currentColor;
-  width: 14px;
-  height: 14px;
+  color: #10B981;
 }
 
-/* Separator */
 .reviews-separator {
-  width: 60px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent 0%, #cbd5e1 50%, transparent 100%);
-  margin: 16px auto 0;
+  height: 1px;
+  background: rgba(255,255,255,0.2);
+  margin-top: 1.5rem;
 }
 
-/* Reviews Content Styles */
-.reviews-content {
-  display: grid;
-  gap: 24px;
-}
-
-.review-item {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
-}
-
-.review-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.review-rating .star.filled {
-  color: #f59e0b;
-}
-
-.review-rating .star.empty {
-  color: #d1d5db;
-}
-
-.review-date {
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.review-author {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.location {
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.verified-badge {
-  background: #dcfce7;
-  color: #166534;
-  padding: 2px 6px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.review-text {
-  color: #374151;
-  line-height: 1.6;
-  margin-bottom: 16px;
-}
-
-.review-image img {
-  border-radius: 8px;
-  max-width: 200px;
-  height: auto;
-}
-
-/* TABLET STYLES */
-@media (min-width: 640px) {
+@media (max-width: 768px) {
+  .reviews-header-professional {
+    padding: 1.5rem;
+  }
+  
   .reviews-header-content {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 32px;
+    flex-direction: column;
+    text-align: center;
+    gap: 1.5rem;
   }
   
   .reviews-title-group {
-    text-align: left;
-    flex: 1;
-  }
-  
-  .reviews-title {
-    font-size: 2rem;
-  }
-  
-  .reviews-subtitle {
-    font-size: 1rem;
-  }
-  
-  .reviews-rating-display {
-    flex: 0 0 auto;
-    min-width: 280px;
-  }
-  
-  .rating-score-container {
-    flex-direction: row;
-    gap: 16px;
-  }
-  
-  .rating-info {
     text-align: center;
   }
   
-  .stars-container {
-    justify-content: center;
-  }
-  
-  .reviews-content {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  }
-}
-
-/* DESKTOP STYLES */
-@media (min-width: 1024px) {
-  .reviews-section-enhanced {
-    padding: 0 24px;
-  }
-  
-  .reviews-header-professional {
-    padding: 32px 0;
-  }
-  
   .reviews-title {
-    font-size: 2.25rem;
-  }
-  
-  .reviews-rating-display {
-    padding: 24px;
-    min-width: 320px;
+    font-size: 24px;
   }
   
   .rating-score {
-    font-size: 2.5rem;
+    font-size: 36px;
+    min-width: 70px;
+  }
+  
+  .reviews-rating-display {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .rating-info {
+    align-items: center;
+    text-align: center;
   }
 }
 
-/* HOVER EFFECTS */
-@media (hover: hover) {
-  .reviews-rating-display {
-    transition: all 0.2s ease;
-  }
-  
-  .reviews-rating-display:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-  }
-  
-  .review-item {
-    transition: all 0.2s ease;
-  }
-  
-  .review-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  }
+/* Variables CSS */
+:root {
+  --reviews-primary-color: {{ section.settings.primary_color }};
+  --reviews-secondary-color: {{ section.settings.secondary_color }};
+  --reviews-star-color: {{ section.settings.star_color }};
+  --reviews-text-color: {{ section.settings.text_color }};
+  --reviews-bg-color: {{ section.settings.background_color }};
+  --reviews-border-radius: {{ section.settings.border_radius }}px;
+  --reviews-shadow: {{ section.settings.shadow_intensity | divided_by: 100.0 }};
 }
+
+/* === CONTENEDOR PRINCIPAL === */
+#content-rl-w {
+  background: var(--reviews-bg-color);
+  border-radius: var(--reviews-border-radius);
+  {% if section.settings.enable_container_shadow %}
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  {% endif %}
+  padding: {{ section.settings.container_padding }}px;
+  margin: {{ section.settings.container_margin }}px 0;
+}
+
+/* === OCULTAR RESUMEN COMPLETO === */
+{% if section.settings.hide_entire_summary %}
+#content-rl-w .summary,
+#content-rl-w .content-flex.content-between.summary,
+.content-flex.content-between.summary {
+  display: none !important;
+}
+
+#content-rl-w .summary + hr,
+.content-flex.content-between.summary + hr,
+#content-rl-w > hr:first-of-type,
+#content-rl-w hr:first-child,
+#revieList hr:first-child {
+  display: none !important;
+}
+{% else %}
+/* MOSTRAR RESUMEN NORMAL */
+#content-rl-w .summary,
+#content-rl-w .content-flex.content-between.summary,
+.content-flex.content-between.summary {
+  background: {{ section.settings.summary_background | default: '#f9fafb' }} !important;
+  border-radius: var(--reviews-border-radius) !important;
+  padding: {{ section.settings.summary_padding | default: 25 }}px !important;
+  margin-bottom: {{ section.settings.summary_spacing | default: 30 }}px !important;
+  {% if section.settings.enable_summary_shadow %}
+  box-shadow: 0 6px 20px rgba(0,0,0,{{ section.settings.summary_shadow_intensity | default: 15 | divided_by: 100.0 }}) !important;
+  {% endif %}
+  position: relative !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(from var(--reviews-primary-color) r g b / 0.2) !important;
+}
+
+/* === TÍTULO RESUMEN === */
+{% unless section.settings.hide_summary_title %}
+#content-rl-w .summary h2,
+.content-flex.content-between.summary h2 {
+  color: {{ section.settings.summary_title_color | default: '#111827' }} !important;
+  font-size: {{ section.settings.summary_title_size | default: 32 }}px !important;
+  font-weight: {{ section.settings.summary_title_weight | default: '700' }} !important;
+  margin: 0 !important;
+}
+
+.content-flex.content-between.summary h2:empty::before {
+  content: "{{ section.settings.reviews_title | default: 'Reseñas de Clientes' }}";
+  display: block;
+}
+{% else %}
+#content-rl-w .summary h2,
+.content-flex.content-between.summary h2,
+.content-flex.content-between.summary h2:empty::before {
+  display: none !important;
+}
+{% endunless %}
+
+/* === CAJA DEL PUNTAJE === */
+#content-rl-w .summary .table-start,
+.table-start {
+  background: {{ section.settings.score_box_background | default: '#2563eb' }} !important;
+  color: {{ section.settings.score_box_text | default: '#ffffff' }} !important;
+  font-size: {{ section.settings.score_box_size | default: 28 }}px !important;
+  font-weight: {{ section.settings.score_box_weight | default: '700' }} !important;
+  padding: {{ section.settings.score_box_padding | default: 15 }}px !important;
+  border-radius: {{ section.settings.score_box_radius | default: 6 }}px !important;
+  margin-right: {{ section.settings.score_box_margin | default: 15 }}px !important;
+  {% if section.settings.enable_score_shadow %}
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+  {% endif %}
+  min-width: {{ section.settings.score_box_width | default: 70 }}px !important;
+  text-align: center !important;
+  transition: all 0.3s ease !important;
+}
+
+/* === TEXTO DE CANTIDAD === */
+#content-rl-w .summary .opinions-text,
+.opinions-text {
+  color: {{ section.settings.summary_count_color | default: '#6b7280' }} !important;
+  font-size: {{ section.settings.summary_count_size | default: 16 }}px !important;
+  font-weight: {{ section.settings.summary_count_weight | default: '400' }} !important;
+  margin-top: {{ section.settings.summary_count_spacing | default: 10 }}px !important;
+  text-transform: capitalize !important;
+}
+
+/* Tabla del resumen */
+.content-flex.content-between.summary table.table {
+  background: transparent !important;
+  border: none !important;
+  margin: 0 !important;
+}
+
+.content-flex.content-between.summary table.table tr th,
+.content-flex.content-between.summary table.table tr td {
+  border: none !important;
+  padding: 0 !important;
+  vertical-align: middle !important;
+  background: transparent !important;
+}
+{% endif %}
+
+/* === ESTRELLAS MEJORADAS === */
+#content-rl-w [data-starlist],
+#content-rl-w [data-star] {
+  font-size: {{ section.settings.star_size }}px !important;
+  {% if section.settings.enable_star_glow %}
+  filter: drop-shadow(0 0 3px rgba(from var(--reviews-star-color) r g b / 0.5));
+  {% endif %}
+}
+
+#content-rl-w [data-starlist]::before,
+#content-rl-w [data-star]::before {
+  color: rgba(from var(--reviews-star-color) r g b / 0.3) !important;
+}
+
+#content-rl-w [data-starlist]::after,
+#content-rl-w [data-star]::after {
+  color: var(--reviews-star-color) !important;
+}
+
+/* === ARREGLAR SUPERPOSICIÓN ESTRELLAS-FECHA === */
+.detail-star .content-flex.content-flex-wrap {
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: {{ section.settings.stars_spacing | default: 8 }}px !important;
+}
+
+.detail-star .content-flex.content-flex-wrap i[data-starlist],
+.detail-star .content-flex.content-flex-wrap i[data-stre] {
+  display: block !important;
+  margin-bottom: {{ section.settings.stars_spacing | default: 8 }}px !important;
+  line-height: 1.2 !important;
+}
+
+.detail-star .content-flex.content-flex-wrap label {
+  margin-top: 0 !important;
+  margin-left: 0 !important;
+  display: block !important;
+  line-height: 1.4 !important;
+}
+
+/* === TARJETAS DE REVIEWS INDIVIDUALES === */
+.detail-star {
+  background: {{ section.settings.card_background }} !important;
+  border-radius: var(--reviews-border-radius) !important;
+  padding: {{ section.settings.card_padding }}px !important;
+  margin-bottom: {{ section.settings.card_spacing }}px !important;
+  border: {{ section.settings.card_border_width }}px solid {{ section.settings.card_border_color }} !important;
+  {% if section.settings.enable_card_shadow %}
+  box-shadow: 0 2px 12px rgba(0,0,0,var(--reviews-shadow)) !important;
+  {% endif %}
+  transition: all 0.3s ease !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.detail-star:hover {
+  {% if section.settings.enable_hover_effects %}
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(0,0,0,calc(var(--reviews-shadow) + 0.1)) !important;
+  {% endif %}
+}
+
+/* === LÍNEA DECORATIVA EN TARJETAS === */
+{% if section.settings.enable_card_accent %}
+.detail-star::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--reviews-primary-color), var(--reviews-secondary-color));
+  border-radius: var(--reviews-border-radius) var(--reviews-border-radius) 0 0;
+}
+{% endif %}
+
+/* === INFORMACIÓN DEL USUARIO === */
+.detail-star b {
+  color: var(--reviews-primary-color) !important;
+  font-size: {{ section.settings.username_size }}px !important;
+  font-weight: {{ section.settings.username_weight }} !important;
+}
+
+/* === BANDERA DE PAÍS CONFIGURABLE === */
+{% if section.settings.enable_country_flag %}
+.detail-star b::after {
+  content: "{{ section.settings.country_flag | default: '🇩🇴' }}";
+  margin-left: {{ section.settings.flag_spacing | default: 8 }}px;
+  font-size: {{ section.settings.flag_size | default: 16 }}px;
+  display: inline-block;
+}
+{% endif %}
+
+.detail-star label {
+  color: rgba(from var(--reviews-text-color) r g b / 0.7) !important;
+  font-size: {{ section.settings.date_size }}px !important;
+}
+
+/* === BADGE VERIFICADO MEJORADO === */
+.content-name-revie svg {
+  {% if section.settings.enable_verified_glow %}
+  filter: drop-shadow(0 0 4px #12D385);
+  {% endif %}
+  transform: scale({{ section.settings.verified_badge_size | divided_by: 100.0 }});
+}
+
+/* === COMENTARIOS === */
+.commentRevie {
+  color: var(--reviews-text-color) !important;
+  font-size: {{ section.settings.comment_size }}px !important;
+  line-height: {{ section.settings.comment_line_height | divided_by: 100.0 }} !important;
+  margin-top: {{ section.settings.comment_spacing }}px !important;
+  {% if section.settings.enable_comment_styling %}
+  font-style: {{ section.settings.comment_style }};
+  padding: 15px;
+  background: rgba(from var(--reviews-bg-color) r g b / 0.5);
+  border-radius: calc(var(--reviews-border-radius) - 4px);
+  border-left: 4px solid var(--reviews-primary-color);
+  {% endif %}
+}
+
+{% if section.settings.hide_empty_comments %}
+/* Ocultar área de comentario cuando está vacía */
+.commentRevie:empty,
+.commentRevie[style*="display: none"] {
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+{% endif %}
+
+/* === PAGINACIÓN MODERNA === */
+.paginationRevie {
+  margin: {{ section.settings.pagination_spacing }}px 0 !important;
+  gap: {{ section.settings.pagination_gap }}px;
+}
+
+.paginationRevie a {
+  background: {{ section.settings.pagination_bg }} !important;
+  color: {{ section.settings.pagination_text }} !important;
+  border: 2px solid {{ section.settings.pagination_border }} !important;
+  border-radius: var(--reviews-border-radius) !important;
+  padding: {{ section.settings.pagination_padding }}px !important;
+  font-weight: {{ section.settings.pagination_weight }} !important;
+  transition: all 0.3s ease !important;
+  text-decoration: none !important;
+}
+
+.paginationRevie a:hover:not(.disabled) {
+  background: var(--reviews-primary-color) !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+.paginationRevie a.disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  background: #f5f5f5 !important;
+}
+
+/* === SEPARADORES MEJORADOS === */
+#content-rl-w hr {
+  border: none !important;
+  height: 2px !important;
+  background: linear-gradient(90deg, transparent, rgba(from var(--reviews-primary-color) r g b / 0.3), transparent) !important;
+  margin: {{ section.settings.separator_spacing }}px 0 !important;
+}
+
+/* === OCULTAR SEPARADOR DE TARJETAS === */
+.detail-star hr {
+  display: none !important;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  #content-rl-w {
+    padding: {{ section.settings.mobile_padding }}px !important;
+    margin: {{ section.settings.mobile_margin }}px 0 !important;
+  }
+  
+  .detail-star {
+    padding: {{ section.settings.mobile_card_padding }}px !important;
+  }
+  
+  .paginationRevie a {
+    padding: {{ section.settings.mobile_pagination_padding }}px !important;
+    font-size: 14px !important;
+  }
+
+  {% if section.settings.mobile_vertical_layout and section.settings.hide_entire_summary == false %}
+  /* Layout vertical forzado en móvil */
+  .content-flex.content-between.summary {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 20px !important;
+  }
+  
+  .content-flex.content-column.content-align-start {
+    order: 2 !important;
+    align-items: center !important;
+    text-align: center !important;
+  }
+  
+  .content-flex.content-between.summary > div:last-child {
+    order: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 15px !important;
+  }
+  
+  .content-flex.content-between.summary table.table tr {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 15px !important;
+  }
+  
+  .table-start {
+    margin-right: 0 !important;
+  }
+  
+  {% if section.settings.hide_mobile_count %}
+  .opinions-text {
+    display: none !important;
+  }
+  {% endif %}
+  {% endif %}
+}
+
 </style>
+
+{%- endif -%}
 
 {% schema %}
 {
-  "name": "Reviews Visual Enhancement",
+  "name": "🎨 Reviews Mejorados",
+  "tag": "section",
+  "class": "reviews-enhancement-section",
   "settings": [
     {
+      "type": "header",
+      "content": "⚙️ Configuración General"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_reviews_enhancement",
+      "label": "Activar mejoras visuales",
+      "default": true,
+      "info": "Aplica estilos modernos a tu sistema de reviews existente"
+    },
+    {
+      "type": "header",
+      "content": "🎨 Paleta de Colores"
+    },
+    {
+      "type": "color",
+      "id": "primary_color",
+      "label": "Color principal",
+      "default": "#2563eb",
+      "info": "Color dominante del diseño"
+    },
+    {
+      "type": "color",
+      "id": "secondary_color",
+      "label": "Color secundario",
+      "default": "#3b82f6",
+      "info": "Color complementario para gradientes"
+    },
+    {
+      "type": "color",
+      "id": "star_color",
+      "label": "Color de estrellas",
+      "default": "#fbbf24"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Color del texto",
+      "default": "#374151"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Color de fondo",
+      "default": "#ffffff"
+    },
+    {
+      "type": "header",
+      "content": "📦 Contenedor y Layout"
+    },
+    {
+      "type": "range",
+      "id": "container_padding",
+      "min": 10,
+      "max": 50,
+      "step": 5,
+      "unit": "px",
+      "label": "Padding interno",
+      "default": 30
+    },
+    {
+      "type": "range",
+      "id": "container_margin",
+      "min": 10,
+      "max": 50,
+      "step": 5,
+      "unit": "px",
+      "label": "Margen exterior",
+      "default": 20
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_container_shadow",
+      "label": "Sombra del contenedor",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "🎭 Header Personalizado"
+    },
+    {
       "type": "text",
-      "id": "title",
-      "label": "Section Title",
-      "default": "Reseñas de Clientes"
+      "id": "reviews_title",
+      "label": "Título del header",
+      "default": "Reseñas de Clientes",
+      "info": "Título principal que aparece en el header personalizado"
     },
     {
       "type": "text",
       "id": "subtitle",
-      "label": "Subtitle",
-      "default": "Opiniones reales de nuestros compradores"
+      "label": "Subtítulo del header",
+      "default": "Opiniones reales de nuestros compradores",
+      "info": "Texto descriptivo bajo el título"
     },
     {
-      "type": "number",
-      "id": "rating",
-      "label": "Overall Rating",
-      "default": 4.88,
-      "info": "Average rating (0-5)"
+      "type": "checkbox",
+      "id": "hide_revie_header",
+      "label": "Ocultar header original de Revie",
+      "default": true,
+      "info": "Oculta el header generado automáticamente por Revie"
     },
     {
-      "type": "number",
-      "id": "review_count",
-      "label": "Review Count",
-      "default": 127
-    }
-  ],
-  "blocks": [
+      "type": "header",
+      "content": "🎛️ Control de Visibilidad"
+    },
     {
-      "type": "review",
-      "name": "Customer Review",
-      "settings": [
-        {
-          "type": "text",
-          "id": "author",
-          "label": "Author Name",
-          "default": "Cliente Verificado"
-        },
-        {
-          "type": "text",
-          "id": "location",
-          "label": "Location"
-        },
-        {
-          "type": "number",
-          "id": "rating",
-          "label": "Rating",
-          "default": 5,
-          "info": "Rating (1-5 stars)"
-        },
-        {
-          "type": "textarea",
-          "id": "review_text",
-          "label": "Review Text"
-        },
-        {
-          "type": "image_picker",
-          "id": "image",
-          "label": "Review Image (Optional)"
-        },
-        {
-          "type": "text",
-          "id": "date",
-          "label": "Review Date",
-          "info": "Format: YYYY-MM-DD"
-        },
-        {
-          "type": "checkbox",
-          "id": "verified",
-          "label": "Verified Purchase",
-          "default": true
-        }
-      ]
+      "type": "checkbox",
+      "id": "hide_entire_summary",
+      "label": "🚫 Ocultar resumen completo",
+      "default": false,
+      "info": "Oculta TODO: puntuación, estrellas, cantidad y línea. Los reviews empezarán directamente."
+    },
+    {
+      "type": "header",
+      "content": "📊 Resumen de Reviews"
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_summary_title",
+      "label": "Ocultar título del resumen",
+      "default": true,
+      "info": "Oculta completamente el título del header"
+    },
+    {
+      "type": "color",
+      "id": "summary_background",
+      "label": "Fondo del resumen",
+      "default": "#f9fafb"
+    },
+    {
+      "type": "range",
+      "id": "summary_padding",
+      "min": 15,
+      "max": 40,
+      "step": 5,
+      "unit": "px",
+      "label": "Padding interno",
+      "default": 25
+    },
+    {
+      "type": "range",
+      "id": "summary_spacing",
+      "min": 20,
+      "max": 50,
+      "step": 5,
+      "unit": "px",
+      "label": "Espaciado inferior",
+      "default": 30
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_summary_shadow",
+      "label": "Sombra del resumen",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "summary_shadow_intensity",
+      "min": 5,
+      "max": 30,
+      "step": 5,
+      "label": "Intensidad sombra",
+      "default": 15
+    },
+    {
+      "type": "color",
+      "id": "summary_title_color",
+      "label": "Color del título",
+      "default": "#111827"
+    },
+    {
+      "type": "range",
+      "id": "summary_title_size",
+      "min": 24,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "label": "Tamaño título",
+      "default": 32
+    },
+    {
+      "type": "select",
+      "id": "summary_title_weight",
+      "label": "Grosor título",
+      "options": [
+        { "value": "400", "label": "Normal" },
+        { "value": "500", "label": "Medio" },
+        { "value": "600", "label": "Semi-Bold" },
+        { "value": "700", "label": "Bold" },
+        { "value": "800", "label": "Extra-Bold" }
+      ],
+      "default": "700"
+    },
+    {
+      "type": "color",
+      "id": "summary_count_color",
+      "label": "Color cantidad",
+      "default": "#6b7280",
+      "info": "Color del texto 'X opiniones'"
+    },
+    {
+      "type": "range",
+      "id": "summary_count_size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "label": "Tamaño cantidad",
+      "default": 16
+    },
+    {
+      "type": "select",
+      "id": "summary_count_weight",
+      "label": "Grosor cantidad",
+      "options": [
+        { "value": "400", "label": "Normal" },
+        { "value": "500", "label": "Medio" },
+        { "value": "600", "label": "Semi-Bold" }
+      ],
+      "default": "400"
+    },
+    {
+      "type": "range",
+      "id": "summary_count_spacing",
+      "min": 5,
+      "max": 20,
+      "step": 5,
+      "unit": "px",
+      "label": "Espaciado superior cantidad",
+      "default": 10
+    },
+    {
+      "type": "header",
+      "content": "🎯 Caja de Puntaje"
+    },
+    {
+      "type": "color",
+      "id": "score_box_background",
+      "label": "Fondo de la caja",
+      "default": "#2563eb"
+    },
+    {
+      "type": "color",
+      "id": "score_box_text",
+      "label": "Color del número",
+      "default": "#ffffff"
+    },
+    {
+      "type": "range",
+      "id": "score_box_size",
+      "min": 18,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "label": "Tamaño del número",
+      "default": 28
+    },
+    {
+      "type": "select",
+      "id": "score_box_weight",
+      "label": "Grosor del número",
+      "options": [
+        { "value": "600", "label": "Semi-Bold" },
+        { "value": "700", "label": "Bold" },
+        { "value": "800", "label": "Extra-Bold" }
+      ],
+      "default": "700"
+    },
+    {
+      "type": "range",
+      "id": "score_box_padding",
+      "min": 5,
+      "max": 25,
+      "step": 5,
+      "unit": "px",
+      "label": "Padding interno",
+      "default": 15
+    },
+    {
+      "type": "range",
+      "id": "score_box_radius",
+      "min": 0,
+      "max": 16,
+      "step": 2,
+      "unit": "px",
+      "label": "Radio de bordes",
+      "default": 6
+    },
+    {
+      "type": "range",
+      "id": "score_box_margin",
+      "min": 10,
+      "max": 25,
+      "step": 5,
+      "unit": "px",
+      "label": "Margen derecho",
+      "default": 15
+    },
+    {
+      "type": "range",
+      "id": "score_box_width",
+      "min": 60,
+      "max": 100,
+      "step": 10,
+      "unit": "px",
+      "label": "Ancho mínimo",
+      "default": 70
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_score_shadow",
+      "label": "Sombra en caja",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "⭐ Estrellas"
+    },
+    {
+      "type": "range",
+      "id": "star_size",
+      "min": 16,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "label": "Tamaño estrellas",
+      "default": 24
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_star_glow",
+      "label": "Brillo en estrellas",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "stars_spacing",
+      "min": 6,
+      "max": 16,
+      "step": 2,
+      "unit": "px",
+      "label": "Espaciado estrellas-fecha",
+      "default": 8,
+      "info": "Evita superposición en reviews individuales"
+    },
+    {
+      "type": "header",
+      "content": "🃏 Tarjetas de Reviews"
+    },
+    {
+      "type": "color",
+      "id": "card_background",
+      "label": "Fondo de tarjetas",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "card_border_color",
+      "label": "Color del borde",
+      "default": "#e5e7eb"
+    },
+    {
+      "type": "range",
+      "id": "card_border_width",
+      "min": 0,
+      "max": 3,
+      "step": 1,
+      "unit": "px",
+      "label": "Grosor del borde",
+      "default": 1
+    },
+    {
+      "type": "range",
+      "id": "card_padding",
+      "min": 15,
+      "max": 40,
+      "step": 5,
+      "unit": "px",
+      "label": "Padding interno",
+      "default": 25
+    },
+    {
+      "type": "range",
+      "id": "card_spacing",
+      "min": 10,
+      "max": 35,
+      "step": 5,
+      "unit": "px",
+      "label": "Espaciado entre tarjetas",
+      "default": 20
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_card_shadow",
+      "label": "Sombra en tarjetas",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_hover_effects",
+      "label": "Efectos hover",
+      "default": true,
+      "info": "Animación al pasar el mouse"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_card_accent",
+      "label": "Línea decorativa superior",
+      "default": true,
+      "info": "Línea de color en la parte superior"
+    },
+    {
+      "type": "header",
+      "content": "👤 Información de Usuario"
+    },
+    {
+      "type": "range",
+      "id": "username_size",
+      "min": 14,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "label": "Tamaño nombre",
+      "default": 16
+    },
+    {
+      "type": "select",
+      "id": "username_weight",
+      "label": "Grosor nombre",
+      "options": [
+        { "value": "500", "label": "Medio" },
+        { "value": "600", "label": "Semi-Bold" },
+        { "value": "700", "label": "Bold" }
+      ],
+      "default": "600"
+    },
+    {
+      "type": "range",
+      "id": "date_size",
+      "min": 12,
+      "max": 16,
+      "step": 1,
+      "unit": "px",
+      "label": "Tamaño fecha",
+      "default": 14
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_verified_glow",
+      "label": "Brillo badge verificado",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "verified_badge_size",
+      "min": 80,
+      "max": 140,
+      "step": 10,
+      "unit": "%",
+      "label": "Tamaño badge",
+      "default": 120
+    },
+    {
+      "type": "header",
+      "content": "🏳️ Bandera de País"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_country_flag",
+      "label": "Mostrar bandera de país",
+      "default": true,
+      "info": "Agrega emoji de bandera junto al nombre"
+    },
+    {
+      "type": "text",
+      "id": "country_flag",
+      "label": "Emoji de bandera",
+      "default": "🇩🇴",
+      "info": "Puedes usar cualquier emoji: 🇺🇸 🇲🇽 🇨🇴 🇦🇷 🇪🇸"
+    },
+    {
+      "type": "range",
+      "id": "flag_size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "label": "Tamaño bandera",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "flag_spacing",
+      "min": 4,
+      "max": 12,
+      "step": 2,
+      "unit": "px",
+      "label": "Espaciado bandera",
+      "default": 8
+    },
+    {
+      "type": "header",
+      "content": "💬 Comentarios"
+    },
+    {
+      "type": "range",
+      "id": "comment_size",
+      "min": 14,
+      "max": 18,
+      "step": 1,
+      "unit": "px",
+      "label": "Tamaño texto",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "comment_line_height",
+      "min": 120,
+      "max": 200,
+      "step": 10,
+      "label": "Altura de línea (%)",
+      "default": 160,
+      "info": "Espaciado entre líneas de texto"
+    },
+    {
+      "type": "range",
+      "id": "comment_spacing",
+      "min": 10,
+      "max": 25,
+      "step": 5,
+      "unit": "px",
+      "label": "Espaciado superior",
+      "default": 15
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_comment_styling",
+      "label": "Estilo especial",
+      "default": false,
+      "info": "Fondo y borde izquierdo colorido"
+    },
+    {
+      "type": "select",
+      "id": "comment_style",
+      "label": "Estilo del texto",
+      "options": [
+        { "value": "normal", "label": "Normal" },
+        { "value": "italic", "label": "Cursiva" }
+      ],
+      "default": "normal"
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_empty_comments",
+      "label": "Ocultar comentarios vacíos",
+      "default": true,
+      "info": "Mejora visual ocultando espacios innecesarios"
+    },
+    {
+      "type": "header",
+      "content": "📄 Paginación"
+    },
+    {
+      "type": "color",
+      "id": "pagination_bg",
+      "label": "Fondo botones",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "pagination_text",
+      "label": "Color texto",
+      "default": "#374151"
+    },
+    {
+      "type": "color",
+      "id": "pagination_border",
+      "label": "Color borde",
+      "default": "#d1d5db"
+    },
+    {
+      "type": "range",
+      "id": "pagination_padding",
+      "min": 8,
+      "max": 20,
+      "step": 2,
+      "unit": "px",
+      "label": "Padding botones",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "pagination_gap",
+      "min": 5,
+      "max": 15,
+      "step": 5,
+      "unit": "px",
+      "label": "Espaciado entre botones",
+      "default": 10
+    },
+    {
+      "type": "range",
+      "id": "pagination_spacing",
+      "min": 20,
+      "max": 50,
+      "step": 5,
+      "unit": "px",
+      "label": "Margen superior/inferior",
+      "default": 30
+    },
+    {
+      "type": "select",
+      "id": "pagination_weight",
+      "label": "Grosor texto",
+      "options": [
+        { "value": "400", "label": "Normal" },
+        { "value": "500", "label": "Medio" },
+        { "value": "600", "label": "Semi-Bold" }
+      ],
+      "default": "500"
+    },
+    {
+      "type": "header",
+      "content": "🎛️ Configuración Visual"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "min": 0,
+      "max": 16,
+      "step": 2,
+      "unit": "px",
+      "label": "Radio de bordes global",
+      "default": 8,
+      "info": "Aplica a todos los elementos redondeados"
+    },
+    {
+      "type": "range",
+      "id": "shadow_intensity",
+      "min": 5,
+      "max": 25,
+      "step": 5,
+      "label": "Intensidad sombras",
+      "default": 10,
+      "info": "Controla la opacidad general de las sombras"
+    },
+    {
+      "type": "range",
+      "id": "separator_spacing",
+      "min": 15,
+      "max": 35,
+      "step": 5,
+      "unit": "px",
+      "label": "Espaciado separadores",
+      "default": 25
+    },
+    {
+      "type": "header",
+      "content": "📱 Responsive (Móvil)"
+    },
+    {
+      "type": "checkbox",
+      "id": "mobile_vertical_layout",
+      "label": "Layout vertical en móvil",
+      "default": true,
+      "info": "Puntuación arriba, estrellas abajo en móvil"
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_mobile_count",
+      "label": "Ocultar cantidad en móvil",
+      "default": false,
+      "info": "Oculta 'X OPINIONES' en pantallas pequeñas"
+    },
+    {
+      "type": "range",
+      "id": "mobile_padding",
+      "min": 15,
+      "max": 30,
+      "step": 5,
+      "unit": "px",
+      "label": "Padding contenedor",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "mobile_margin",
+      "min": 10,
+      "max": 30,
+      "step": 5,
+      "unit": "px",
+      "label": "Margen contenedor",
+      "default": 15
+    },
+    {
+      "type": "range",
+      "id": "mobile_card_padding",
+      "min": 15,
+      "max": 25,
+      "step": 5,
+      "unit": "px",
+      "label": "Padding tarjetas",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "mobile_pagination_padding",
+      "min": 6,
+      "max": 12,
+      "step": 2,
+      "unit": "px",
+      "label": "Padding paginación",
+      "default": 8
     }
   ],
   "presets": [
     {
-      "name": "Reviews Visual Enhancement",
-      "blocks": [
-        {
-          "type": "review",
-          "settings": {
-            "author": "Eduardo",
-            "location": "🇩🇴",
-            "rating": 5,
-            "review_text": "Más de 5 años usando la marca excelente",
-            "date": "2025-07-24",
-            "verified": true
-          }
-        }
-      ]
+      "name": "🎨 Reviews Mejorados - Azul",
+      "settings": {
+        "enable_reviews_enhancement": true,
+        "primary_color": "#2563eb",
+        "secondary_color": "#3b82f6",
+        "star_color": "#fbbf24"
+      }
+    },
+    {
+      "name": "🟢 Reviews Modernos - Verde",
+      "settings": {
+        "enable_reviews_enhancement": true,
+        "primary_color": "#059669",
+        "secondary_color": "#10b981",
+        "star_color": "#f59e0b"
+      }
+    },
+    {
+      "name": "🟣 Reviews Elegantes - Púrpura",
+      "settings": {
+        "enable_reviews_enhancement": true,
+        "primary_color": "#7c3aed",
+        "secondary_color": "#8b5cf6",
+        "star_color": "#f59e0b"
+      }
+    },
+    {
+      "name": "🔴 Reviews Dinámicos - Rojo",
+      "settings": {
+        "enable_reviews_enhancement": true,
+        "primary_color": "#dc2626",
+        "secondary_color": "#ef4444",
+        "star_color": "#fbbf24"
+      }
+    },
+    {
+      "name": "⚫ Reviews Minimalista - Dark",
+      "settings": {
+        "enable_reviews_enhancement": true,
+        "primary_color": "#374151",
+        "secondary_color": "#4b5563",
+        "star_color": "#fbbf24",
+        "background_color": "#f9fafb"
+      }
     }
   ]
 }
