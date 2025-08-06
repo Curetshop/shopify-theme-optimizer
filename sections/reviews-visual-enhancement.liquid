@@ -1,47 +1,7 @@
 {%- if section.settings.enable_reviews_enhancement -%}
 
-<!-- HEADER PERSONALIZADO MEJORADO -->
-<div class="reviews-section-enhanced">
-  <div class="reviews-header-professional">
-    <div class="reviews-header-content">
-      
-      <!-- Title Section -->
-      <div class="reviews-title-group">
-        <h2 class="reviews-title">{{ section.settings.reviews_title | default: 'Reseñas de Clientes' }}</h2>
-        <p class="reviews-subtitle">{{ section.settings.subtitle | default: 'Opiniones reales de nuestros compradores' }}</p>
-      </div>
-      
-      <!-- Rating Display - Mobile Optimized -->
-      <div class="reviews-rating-display">
-        <div class="rating-score-container">
-          <div class="rating-score" id="custom-rating-score">-</div>
-          <div class="rating-info">
-            <div class="stars-container" id="custom-stars-display">
-              <!-- Las estrellas se generarán dinámicamente -->
-            </div>
-            <p class="rating-description" id="custom-rating-description">
-              Basado en - reseñas verificadas
-            </p>
-          </div>
-        </div>
-        
-        <!-- Trust Badge -->
-        <div class="trust-badge">
-          <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-          </svg>
-          <span>Verificadas</span>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Separator -->
-    <div class="reviews-separator"></div>
-  </div>
-</div>
-
 <script>
-// Sistema dinámico para header personalizado de Revie
+// Sistema dinámico para obtener datos reales de Revie y actualizar el header
 window.addEventListener('load', function() {
   setTimeout(function() {
     
@@ -78,101 +38,33 @@ window.addEventListener('load', function() {
       return { rating: rating, reviewCount: reviewCount };
     };
     
-    // Función para generar estrellas
-    var generateStars = function(rating) {
-      if (!rating) return '';
-      
-      var stars = '';
-      var fullStars = Math.floor(rating);
-      var hasHalfStar = (rating % 1) >= 0.5;
-      
-      for (var i = 1; i <= 5; i++) {
-        if (i <= fullStars) {
-          stars += '<span class="star star-full">★</span>';
-        } else if (i === fullStars + 1 && hasHalfStar) {
-          stars += '<span class="star star-half">★</span>';
-        } else {
-          stars += '<span class="star star-empty">☆</span>';
-        }
-      }
-      
-      return stars;
-    };
-    
-    // Función para actualizar header personalizado
-    var updateCustomHeader = function() {
+    // Función para actualizar título dinámico si está configurado
+    var updateDynamicTitle = function() {
+      {% if section.settings.enable_dynamic_title %}
       var data = extractRevieData();
+      var titleElement = document.querySelector('.content-flex.content-between.summary h2');
       
-      // Actualizar puntuación
-      var scoreElement = document.getElementById('custom-rating-score');
-      if (scoreElement && data.rating) {
-        scoreElement.textContent = data.rating.toFixed(1);
+      if (titleElement && data.rating && data.reviewCount) {
+        var dynamicTitle = '{{ section.settings.dynamic_title_template | default: "⭐ {rating} | {count} Opiniones Verificadas" }}';
+        dynamicTitle = dynamicTitle.replace('{rating}', data.rating.toFixed(1));
+        dynamicTitle = dynamicTitle.replace('{count}', data.reviewCount);
+        titleElement.textContent = dynamicTitle;
       }
-      
-      // Actualizar estrellas
-      var starsElement = document.getElementById('custom-stars-display');
-      if (starsElement && data.rating) {
-        starsElement.innerHTML = generateStars(data.rating);
-      }
-      
-      // Actualizar descripción
-      var descElement = document.getElementById('custom-rating-description');
-      if (descElement && data.reviewCount) {
-        descElement.textContent = 'Basado en ' + data.reviewCount + ' reseñas verificadas';
-      }
-      
-      return data.rating || data.reviewCount;
-    };
-
-    {% if section.settings.hide_revie_header %}
-    // Función para ocultar header original de Revie
-    var hideRevieHeader = function() {
-      var selectors = [
-        '.content-flex.content-between.summary',
-        '#content-rl-w .summary',
-        '#revieDataIA .summary',
-        '.summary h2',
-        '.summary .table-start',
-        '.summary .opinions-text',
-        '#content-rl-w > .summary'
-      ];
-      
-      var hidden = false;
-      selectors.forEach(function(selector) {
-        var elements = document.querySelectorAll(selector);
-        if (elements.length > 0) {
-          elements.forEach(function(element) {
-            element.style.display = 'none';
-            hidden = true;
-          });
-        }
-      });
-      
-      return hidden;
-    };
-    {% endif %}
-    
-    // Función principal que maneja todo
-    var processRevieData = function() {
-      updateCustomHeader();
-      {% if section.settings.hide_revie_header %}
-      hideRevieHeader();
       {% endif %}
     };
     
-    // Intentar procesar inmediatamente
-    processRevieData();
+    // Ejecutar actualización
+    updateDynamicTitle();
     
     // Intentar múltiples veces por si Revie tarda en cargar
-    setTimeout(processRevieData, 1000);
-    setTimeout(processRevieData, 2000);
-    setTimeout(processRevieData, 3000);
+    setTimeout(updateDynamicTitle, 1000);
+    setTimeout(updateDynamicTitle, 2000);
     
     // Observer para detectar cuando Revie inyecta contenido
     var observer = new MutationObserver(function(mutations) {
       mutations.forEach(function(mutation) {
         if (mutation.addedNodes.length > 0) {
-          setTimeout(processRevieData, 100);
+          setTimeout(updateDynamicTitle, 100);
         }
       });
     });
@@ -186,12 +78,6 @@ window.addEventListener('load', function() {
       });
     }
     
-    // También observar el body por si Revie se inyecta después
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-    
   }, 500);
 });
 </script>
@@ -199,168 +85,7 @@ window.addEventListener('load', function() {
 <style>
 /* === MEJORAS VISUALES PARA REVIEWS === */
 
-/* === ESTILOS DEL HEADER PERSONALIZADO === */
-.reviews-header-professional {
-  background: linear-gradient(135deg, var(--reviews-primary-color), rgba(from var(--reviews-primary-color) r g b / 0.8));
-  padding: 2rem;
-  border-radius: 12px;
-  margin-bottom: 2rem;
-  box-shadow: 0 8px 32px rgba(from var(--reviews-primary-color) r g b / 0.1);
-  color: white;
-  text-align: center;
-}
-
-.reviews-header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 2rem;
-}
-
-.reviews-title-group {
-  flex: 1;
-  text-align: left;
-}
-
-.reviews-title {
-  font-size: 28px;
-  font-weight: 700;
-  margin: 0 0 0.5rem 0;
-  color: white;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-
-.reviews-subtitle {
-  font-size: 16px;
-  margin: 0;
-  opacity: 0.9;
-  color: white;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-}
-
-.reviews-rating-display {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.rating-score-container {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.rating-score {
-  font-size: 42px;
-  font-weight: 800;
-  color: white;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-  min-width: 80px;
-  text-align: center;
-  background: rgba(255,255,255,0.15);
-  border-radius: 12px;
-  padding: 0.5rem;
-  backdrop-filter: blur(10px);
-}
-
-.rating-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-items: flex-start;
-}
-
-.stars-container {
-  display: flex;
-  gap: 2px;
-}
-
-.star {
-  font-size: 24px;
-  color: #FFD700;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-}
-
-.star-full {
-  opacity: 1;
-}
-
-.star-half {
-  opacity: 0.7;
-}
-
-.star-empty {
-  opacity: 0.3;
-}
-
-.rating-description {
-  font-size: 14px;
-  margin: 0;
-  opacity: 0.9;
-  color: white;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-}
-
-.trust-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(255,255,255,0.2);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
-  color: white;
-  backdrop-filter: blur(10px);
-}
-
-.check-icon {
-  color: #10B981;
-}
-
-.reviews-separator {
-  height: 1px;
-  background: rgba(255,255,255,0.2);
-  margin-top: 1.5rem;
-}
-
-@media (max-width: 768px) {
-  .reviews-header-professional {
-    padding: 1.5rem;
-  }
-  
-  .reviews-header-content {
-    flex-direction: column;
-    text-align: center;
-    gap: 1.5rem;
-  }
-  
-  .reviews-title-group {
-    text-align: center;
-  }
-  
-  .reviews-title {
-    font-size: 24px;
-  }
-  
-  .rating-score {
-    font-size: 36px;
-    min-width: 70px;
-  }
-  
-  .reviews-rating-display {
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .rating-info {
-    align-items: center;
-    text-align: center;
-  }
-}
-
-/* Variables CSS */
+/* Variables CSS personalizables */
 :root {
   --reviews-primary-color: {{ section.settings.primary_color }};
   --reviews-secondary-color: {{ section.settings.secondary_color }};
@@ -802,31 +527,6 @@ window.addEventListener('load', function() {
     },
     {
       "type": "header",
-      "content": "🎭 Header Personalizado"
-    },
-    {
-      "type": "text",
-      "id": "reviews_title",
-      "label": "Título del header",
-      "default": "Reseñas de Clientes",
-      "info": "Título principal que aparece en el header personalizado"
-    },
-    {
-      "type": "text",
-      "id": "subtitle",
-      "label": "Subtítulo del header",
-      "default": "Opiniones reales de nuestros compradores",
-      "info": "Texto descriptivo bajo el título"
-    },
-    {
-      "type": "checkbox",
-      "id": "hide_revie_header",
-      "label": "Ocultar header original de Revie",
-      "default": true,
-      "info": "Oculta el header generado automáticamente por Revie"
-    },
-    {
-      "type": "header",
       "content": "🎛️ Control de Visibilidad"
     },
     {
@@ -841,11 +541,32 @@ window.addEventListener('load', function() {
       "content": "📊 Resumen de Reviews"
     },
     {
+      "type": "text",
+      "id": "reviews_title",
+      "label": "Título personalizado",
+      "default": "Reseñas de Clientes",
+      "info": "Se mostrará si el h2 está vacío y el título está activado"
+    },
+    {
       "type": "checkbox",
       "id": "hide_summary_title",
       "label": "Ocultar título del resumen",
-      "default": true,
+      "default": false,
       "info": "Oculta completamente el título del header"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_dynamic_title",
+      "label": "🔄 Título dinámico con datos reales",
+      "default": false,
+      "info": "Reemplaza el título con datos reales de puntuación y cantidad"
+    },
+    {
+      "type": "text",
+      "id": "dynamic_title_template",
+      "label": "Plantilla título dinámico",
+      "default": "⭐ {rating} | {count} Opiniones Verificadas",
+      "info": "Usa {rating} para puntuación y {count} para cantidad"
     },
     {
       "type": "color",
